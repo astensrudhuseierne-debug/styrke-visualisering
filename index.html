@@ -1,0 +1,2102 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1113">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Styrke">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}body{margin:0;font:14px system-ui,sans-serif;-webkit-text-size-adjust:100%}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Styrkeberegning visualisert</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&family=STIX+Two+Text:ital,wght@1,500&display=swap">
+<style>
+/* Layout: én kolonne med moduler; hver modul = kontroller, tegning, utregning, tankegang. Mørkt tema (bevisst, som animasjonssiden). */
+:root {
+  --bg: #0e1113;
+  --panel: #161a1d;
+  --inset: #0f1214;
+  --line: #2a3035;
+  --fg: #e8eaec;
+  --muted: #9aa3ab;
+  --amber: #e9b45c;
+  --blue: #3fa9d6;
+  --red: #ee5a6f;
+  --green: #b5dc4c;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 56px;
+}
+.wrap { max-width: 820px; margin: 0 auto; display: grid; gap: 28px; }
+.wrap > *, .mod > * { min-width: 0; }
+h1 { font-size: 1.6rem; font-weight: 600; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.2rem; font-weight: 600; margin: 0; text-wrap: balance; }
+.lead { color: var(--muted); margin: 6px 0 0; max-width: 65ch; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; }
+nav a {
+  color: var(--fg); text-decoration: none; font-size: 0.85rem; padding: 5px 11px;
+  border: 1px solid var(--line); border-radius: 999px;
+}
+nav a:hover, nav a:focus-visible { border-color: var(--amber); outline: none; }
+.mod { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; scroll-margin-top: 16px; }
+.mod-head { display: grid; gap: 4px; }
+.tag { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--amber); }
+.mod p { margin: 0; max-width: 68ch; }
+.ctrl { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px 20px; }
+.ctrl label { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--muted); min-width: 0; }
+.ctrl input[type=range] { flex: 1 1 80px; min-width: 0; accent-color: var(--amber); }
+.ctrl output { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--fg); min-width: 6.5ch; text-align: right; font-size: 0.85rem; }
+select, button {
+  font: 500 0.88rem var(--font-body); color: var(--fg); background: var(--inset);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px;
+}
+button { cursor: pointer; }
+button:hover { border-color: var(--amber); }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.viz { overflow-x: auto; background: var(--inset); border-radius: 8px; }
+.viz svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.viz svg text { font-family: var(--font-mono); }
+pre.calc {
+  margin: 0; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.75;
+  background: var(--inset); border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 14px; overflow-x: auto; font-variant-numeric: tabular-nums;
+}
+.think { border-left: 2px solid var(--line); padding-left: 12px; display: grid; gap: 6px; }
+.think ul { margin: 0; padding-left: 1.1em; }
+.think li { max-width: 66ch; }
+.note { font-size: 0.82rem; color: var(--muted); }
+#sc-canvas { display: block; margin: 0 auto; width: min(100%, calc(72vh * 9 / 16)); max-width: 100%; aspect-ratio: 9 / 16; border-radius: 8px; background: #0b0d0f; }
+.sc-step { font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); text-align: center; max-width: none; }
+.v-red { color: var(--red); } .v-green { color: var(--green); } .v-amber { color: var(--amber); } .v-blue { color: var(--blue); }
+footer { font-size: 0.85rem; color: var(--muted); max-width: 68ch; }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Styrkeberegning visualisert</h1>
+    <p class="lead">Atten eksempler som starter med sin og cos på enhetssirkelen og bygger videre til bjelker, søyler og avstivning. Du kan skru på en parameter om gangen, og tegning og utregning følger med. Alle tall vises med mellomregninger, så du kan kontrollere dem.</p>
+  </header>
+
+  <nav aria-label="Eksempler">
+    <a href="#sincos">Sin og cos</a><a href="#sperre">Skrå sperre</a><a href="#fiber">Fiberretning</a><a href="#bolt">Bolt i skjær</a><a href="#knekk">Knekking</a><a href="#tverrsnitt">Høykant eller flatt</a><a href="#steiner">Steinertillegget</a>
+    <a href="#nedboy">Nedbøyning</a><a href="#punktlast">Vandrende last</a><a href="#bjelke">Innspent eller fritt opplagt</a><a href="#ubestemt">Statisk ubestemt bjelke</a><a href="#tabell">Bjelketabell</a><a href="#super">Superposisjon</a><a href="#stag">Skråstag</a><a href="#knute">Knutepunktsmetoden</a><a href="#strekk">Strekkstag</a><a href="#bro">Fagverksbro</a><a href="#mohr">Mohrs sirkel</a>
+  </nav>
+
+  <!-- 0 Sin og cos -->
+  <section class="mod" id="sincos">
+    <div class="mod-head"><span class="tag">Grunnlag · trigonometri</span><h2>Sin og cos på enhetssirkelen</h2></div>
+    <p><b>Del 1:</b> Et punkt går rundt en sirkel med radius 1. Høyden kastes mot bakveggen og tegner <b class="v-amber">sin x</b>, og dybden kastes ned på gulvet og tegner <b class="v-blue">cos x</b>. <b>Del 2:</b> Begge kurvene kvadreres. <b class="v-green">cos²</b> snus og legges oppå <b class="v-red">sin²</b>, og summen blir en rett linje i y = 1.</p>
+    <canvas id="sc-canvas" aria-label="Animasjon: enhetssirkel som tegner sin x og cos x, deretter sin²x og cos²x som settes sammen til linjen y = 1"></canvas>
+    <div class="ctrl">
+      <label><button id="sc-play" type="button">Pause</button> <button id="sc-reset" type="button">Start på nytt</button></label>
+      <label>Fart <input id="sc-speed" type="range" min="0.2" max="2" step="0.1" value="1"></label>
+      <label>Tidslinje <input id="sc-time" type="range" min="0" max="26" step="0.05" value="0"></label>
+    </div>
+    <p class="sc-step" id="sc-step">Del 1: sirkelen tegner sin x og cos x</p>
+    <pre class="calc">Enhetssirkelen (r = 1):  x = cos θ   y = sin θ
+Pytagoras:               x² + y² = r²  →  cos²θ + sin²θ = 1
+Forskyvning:             cos θ = sin(θ + 90°)
+Halv vinkel:             sin²x = ½ − ½·cos 2x    cos²x = ½ + ½·cos 2x   → sum = 1
+Kontroll ved x = 1 rad:  sin² = 0,841² = 0,708   cos² = 0,540² = 0,292   sum = 1,000 ✓</pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Hver gang en kraft eller last står skrått, deles den i to komponenter. Når vinkelen måles fra aksen, er komponenten langs aksen F·cos og komponenten på tvers F·sin. Det er samme trekant som i sirkelen.</li>
+      <li>sin² + cos² = 1 gir en fast kontroll av hver dekomponering: √(F₁² + F₂²) = F. Går den ikke opp, er det en regnefeil.</li>
+      <li>sin² og cos² går igjen i resten av eksemplene: i fasthet skrått på fibrene, i snølast på skrå sperre og i Mohrs sirkel.</li>
+    </ul></div>
+  </section>
+
+  <!-- Skrå sperre -->
+  <section class="mod" id="sperre">
+    <div class="mod-head"><span class="tag">Last · dekomponering, NS-EN 1991-1-3</span><h2>Skrå sperre med snølast</h2></div>
+    <p>Tyngdekraften virker loddrett, mens sperra bare «kjenner» to retninger: <b class="v-blue">vinkelrett på aksen</b>, som gir bøyning og skjær, og <b class="v-amber">langs aksen</b>, som gir trykk. Vinkelen mellom loddlinjen og sperras normal er lik takvinkelen α.</p>
+    <div class="ctrl">
+      <label>Takvinkel α <input type="range" id="b-a" min="0" max="60" step="1" value="30"><output id="b-a-o"></output></label>
+      <label>Horisontalt spenn l<sub>h</sub> <input type="range" id="b-l" min="2" max="8" step="0.1" value="4"><output id="b-l-o"></output></label>
+      <label>Last q (per m horisontalt) <input type="range" id="b-q" min="0.5" max="4" step="0.1" value="1.8"><output id="b-q-o"></output></label>
+    </div>
+    <div class="viz"><svg id="beam" viewBox="0 0 600 480" role="img" aria-label="Skrå sperre med vertikal last dekomponert i komponent vinkelrett på og langs sperra"></svg></div>
+    <pre class="calc" id="b-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Hvilken flate er lasten oppgitt per?</b> Snø regnes per m² horisontal projeksjon, egenvekt per m² takflate. Vind virker vinkelrett på takflaten og skal ikke dekomponeres.</li>
+      <li><b>Snø gir samme moment som en flat bjelke:</b> M = q·cos²α·(l<sub>h</sub>/cos α)²/8 = q·l<sub>h</sub>²/8. For egenvekt per m takflate blir M = g·l<sub>h</sub>²/(8·cos α), som øker med takvinkelen.</li>
+      <li><b>Aksialkraften må tas opp et sted:</b> av mønsås, hanebjelke, bindbjelke eller forankring. Mangler dette, gir det horisontalskyv i foten, og i eldre trehus ser du det som utbøyde langvegger og et mønet som har sunket.</li>
+      <li>Bøyning og trykk kontrolleres kombinert etter NS-EN 1995-1-1, pkt. 6.2.4 og 6.3.2.</li>
+    </ul><p class="note">q = 1,8 kN/m tilsvarer 3,0 kN/m² × c/c 0,6 m og er et regneeksempel. Snølast fastsettes etter NS-EN 1991-1-3 med nasjonalt tillegg.</p></div>
+  </section>
+
+  <!-- 1 Fiberretning -->
+  <section class="mod" id="fiber">
+    <div class="mod-head"><span class="tag">Tre · NS-EN 1995-1-1, 6.2.2 (lign. 6.16)</span><h2>Trykk skrått på fiberretningen</h2></div>
+    <p>Trykkfastheten faller raskt når kraften står skrått på fibrene. Formelen veier fastheten langs og på tvers av fibrene med <b>cos²α</b> og <b>sin²α</b>, altså samme par som i sin² + cos² = 1.</p>
+    <div class="ctrl">
+      <label>Vinkel mot fiber α <input type="range" id="f-a" min="0" max="90" step="1" value="30"><output id="f-a-o"></output></label>
+      <label>Fasthetsklasse <select id="f-c"><option>C18</option><option selected>C24</option><option>C30</option></select></label>
+      <label>k<sub>c,90</sub> <input type="range" id="f-k" min="1" max="1.75" step="0.05" value="1"><output id="f-k-o"></output></label>
+    </div>
+    <div class="viz"><svg id="f-svg" viewBox="0 0 640 290" role="img" aria-label="Trekloss med fiber i vinkel α og kurve for trykkfasthet mot vinkel"></svg></div>
+    <pre class="calc" id="f-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>I trykk er tre omtrent 8–9 ganger svakere på tvers av fibrene enn langs dem (C24: 21 / 2,5 = 8,4). I strekk er forskjellen over 30 ganger. Kurven faller derfor bratt allerede ved små vinkler.</li>
+      <li>Typiske steder: fuglemunn i sperre mot svill, skråstivere mot bjelke og innfelte knutepunkter. Kontaktflaten står skrått på fibrene i minst én av delene.</li>
+      <li>k<sub>c,90</sub> kan økes over 1,0 bare for bestemte opplagerforhold (EC5 6.1.5). Med 1,0 er du på konservativ side.</li>
+    </ul><p class="note">Karakteristiske verdier etter NS-EN 338. Dimensjonerende verdier får i tillegg k<sub>mod</sub>/γ<sub>M</sub>, men forholdstallene i kurven er de samme.</p></div>
+  </section>
+
+  <!-- Bolt -->
+  <section class="mod" id="bolt">
+    <div class="mod-head"><span class="tag">Forbindelser · NS-EN 1993-1-8, tabell 3.4</span><h2>Skjærspenning i bolt</h2></div>
+    <p>En bolt i en overlappsforbindelse blir skåret av i planet mellom platene. Gjennomsnittlig skjærspenning er <b>τ = F/(n·A)</b>, der n er antall skjærplan. Med dobbelt snitt deles kraften på to tverrsnitt.</p>
+    <div class="ctrl">
+      <label>Kraft F<sub>Ed</sub> <input type="range" id="v-f" min="1" max="80" step="1" value="20"><output id="v-f-o"></output></label>
+      <label>Bolt <select id="v-d"><option>M8</option><option>M10</option><option selected>M12</option><option>M16</option><option>M20</option><option>M24</option></select></label>
+      <label>Fasthetsklasse <select id="v-c"><option>4.6</option><option>5.6</option><option selected>8.8</option><option>10.9</option></select></label>
+      <label>Skjærplan <select id="v-n"><option value="1">Enkelt snitt</option><option value="2">Dobbelt snitt</option></select></label>
+      <label><input type="checkbox" id="v-t" checked> Skjærplan gjennom gjenger</label>
+    </div>
+    <div class="viz"><svg id="v-svg" viewBox="0 0 640 320" role="img" aria-label="Boltforbindelse med skjærplan og skjærspenningsfordeling i bolten"></svg></div>
+    <pre class="calc" id="v-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Dobbelt snitt gir dobbel kapasitet med samme bolt.</li>
+      <li>Gjenger i skjærplanet reduserer arealet med omtrent 25 %. Velg boltlengde slik at den glatte delen står i skjærplanet.</li>
+      <li>Skjærspenningen er ikke jevnt fordelt. I et sirkulært tverrsnitt er den størst i midten, omtrent 4/3 av gjennomsnittet.</li>
+      <li>For stål må hullkanttrykket (F<sub>b,Rd</sub>) også kontrolleres, og ofte er det dette som styrer.</li>
+      <li>I trekonstruksjoner er det nesten aldri boltens skjærfasthet som styrer. Kapasiteten regnes etter NS-EN 1995-1-1, 8.5, med hullkantfasthet i treet og flytemoment i bolten (Johansens likninger).</li>
+    </ul><p class="note">F er dimensjonerende kraft. γ<sub>M2</sub> = 1,25 er anbefalt verdi, så sjekk nasjonalt tillegg. A<sub>s</sub> er spenningsarealet for ISO-gjenger.</p></div>
+  </section>
+
+  <!-- 2 Knekking -->
+  <section class="mod" id="knekk">
+    <div class="mod-head"><span class="tag">Stabilitet · Euler, NS-EN 1995-1-1, 6.3.2</span><h2>Knekking av søyle</h2></div>
+    <p>Den utknekte formen er en sinuskurve. <b>Knekklengden L<sub>k</sub> er lengden av én halv sinusbølge</b>, og opplagringen bestemmer hvor stor del av søylen bølgen dekker.</p>
+    <div class="ctrl">
+      <label>Opplagring <select id="k-case"><option value="pp">Leddet–leddet (β = 1,0)</option><option value="cf">Innspent–fri (β = 2,0)</option><option value="ff">Innspent–innspent (β = 0,5)</option></select></label>
+      <label>Lengde L <input type="range" id="k-l" min="1.5" max="4" step="0.1" value="2.4"><output id="k-l-o"></output></label>
+      <label>Tverrsnitt C24 <select id="k-s"><option>48x98</option><option>48x148</option><option>48x198</option><option selected>98x98</option><option>148x148</option></select></label>
+    </div>
+    <div class="viz"><svg id="k-svg" viewBox="0 0 640 350" role="img" aria-label="Søyle som knekker ut som en sinusbølge, med knekklengde markert, og kurve for knekklast mot lengde"></svg></div>
+    <pre class="calc" id="k-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>N<sub>cr</sub> går med 1/L<sub>k</sub>². Dobbel knekklengde gir en firedel av knekklasten. En utkraget stolpe (β = 2) tåler derfor bare en firedel av en leddet stolpe med samme lengde.</li>
+      <li>Søylen knekker om den svake aksen. For 48×198 er det 48-retningen som teller, med mindre den er avstivet sideveis.</li>
+      <li>Euler gir den teoretiske øvre grensen. EC5 reduserer med k<sub>c</sub> ut fra relativ slankhet λ<sub>rel</sub>, og når λ<sub>rel</sub> &gt; 0,3 må knekking alltid kontrolleres.</li>
+      <li>β-verdiene er teoretiske og forutsetter helt stive innspenninger. Ekte innspenninger i tre gir etter, så i praksis bør du bruke større knekklengde enn 0,5·L for en innspent søyle.</li>
+    </ul></div>
+  </section>
+
+  <!-- 3 Høykant/flatt -->
+  <section class="mod" id="tverrsnitt">
+    <div class="mod-head"><span class="tag">Bøyning · σ = M/W</span><h2>Høykant eller flatt</h2></div>
+    <p>Samme plank og samme moment, men dreid 90°. Motstandsmomentet W går med høyden i andre potens, og stivheten I med høyden i tredje.</p>
+    <div class="ctrl">
+      <label>Dimensjon <select id="t-s"><option>36x148</option><option>48x98</option><option>48x148</option><option selected>48x198</option><option>48x223</option></select></label>
+      <label>Moment M <input type="range" id="t-m" min="0.5" max="5" step="0.1" value="2"><output id="t-m-o"></output></label>
+    </div>
+    <div class="viz"><svg id="t-svg" viewBox="0 0 640 300" role="img" aria-label="Tverrsnitt på høykant og flatt med spenningsfordeling"></svg></div>
+    <pre class="calc" id="t-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Snu planken fra flatt til høykant, og den blir h/b ganger sterkere og (h/b)² ganger stivere. Det er derfor bjelkelag ligger på høykant.</li>
+      <li>Spenningen er null i nøytralaksen og størst i ytterkant. Hakk og boring i ytterkant reduserer derfor bøyekapasiteten mye mer enn i midten av høyden. Skjærspenningen er derimot størst i midten.</li>
+    </ul><p class="note">f<sub>m,k</sub> = 24 MPa for C24 er en karakteristisk verdi, før k<sub>mod</sub>, γ<sub>M</sub> og k<sub>h</sub>. Den brukes bare som referanse her.</p></div>
+  </section>
+
+  <!-- Steiner -->
+  <section class="mod" id="steiner">
+    <div class="mod-head"><span class="tag">Tverrsnitt · I = I<sub>c</sub> + A·d²</span><h2>Steinertillegget</h2></div>
+    <p>En del som ligger utenfor nøytralaksen bidrar med sitt eget treghetsmoment I<sub>c</sub> pluss <b>A·d²</b>, der d er avstanden fra delens tyngdepunkt til nøytralaksen. Leddet vokser med kvadratet av avstanden. Derfor gir materiale langt fra nøytralaksen mest stivhet, slik som i I-bjelker.</p>
+    <div class="ctrl">
+      <label>Høyde h <input type="range" id="i-h" min="200" max="450" step="10" value="300"><output id="i-h-o"></output></label>
+      <label>Flens (flatt) <select id="i-f"><option>48x73</option><option selected>48x98</option><option>48x148</option></select></label>
+      <label>Steg <select id="i-w"><option value="12">12 mm plate</option><option value="15" selected>15 mm plate</option><option value="18">18 mm plate</option><option value="22">22 mm plate</option></select></label>
+    </div>
+    <div class="viz"><svg id="i-svg" viewBox="0 0 640 360" role="img" aria-label="I-tverrsnitt med avstand fra flens til nøytralakse og fordeling av treghetsmomentet"></svg></div>
+    <pre class="calc" id="i-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Flensene står for nesten all stivheten, og nesten alt av det kommer fra A·d². Flensens eget treghetsmoment I<sub>c</sub> er lite.</li>
+      <li>Steget holder flensene fra hverandre og tar skjær. Hull i steget nær nøytralaksen svekker bøyestivheten lite, men skjærspenningen er størst nettopp der. Hull i steget nær oppleggene, der skjærkraften er stor, er derfor kritisk. Følg produsentens hulltabeller. Hakk i flensen er alltid kritisk.</li>
+      <li>Beregningen forutsetter fullt samvirke (limt). Spikret eller skrudd sammenføyning glir, og da reduseres stivheten. Det regnes med γ-metoden i NS-EN 1995-1-1, tillegg B.</li>
+    </ul></div>
+  </section>
+
+  <!-- 4 Nedbøyning -->
+  <section class="mod" id="nedboy">
+    <div class="mod-head"><span class="tag">Bruksgrense · NS-EN 1995-1-1, 7.2</span><h2>Nedbøyning og spennvidde</h2></div>
+    <p>Nedbøyningen går med L<sup>4</sup>. Kurven viser hvor raskt den vokser, og hvor den krysser et typisk krav på L/300.</p>
+    <div class="ctrl">
+      <label>Spenn L <input type="range" id="n-l" min="2" max="6" step="0.1" value="4"><output id="n-l-o"></output></label>
+      <label>Last q <input type="range" id="n-q" min="0.5" max="3" step="0.1" value="1"><output id="n-q-o"></output></label>
+      <label>Bjelke C24 <select id="n-s"><option>48x148</option><option selected>48x198</option><option>48x223</option><option>73x223</option></select></label>
+    </div>
+    <div class="viz"><svg id="n-svg" viewBox="0 0 640 320" role="img" aria-label="Bjelke med nedbøyning og kurve for nedbøyning mot spennvidde"></svg></div>
+    <pre class="calc" id="n-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>20 % lengre spenn gir 1,2⁴ = 2,07 ganger nedbøyningen. Dobbel høyde gir 2³ = 8 ganger stivhet.</li>
+      <li>Ofte er det nedbøyning og svingninger som styrer bjelkelag, ikke bruddkapasitet.</li>
+    </ul><p class="note">Dette er momentan nedbøyning med E<sub>mean</sub> = 11 000 MPa. Kryp (k<sub>def</sub>) og lastkombinasjoner kommer i tillegg. L/300 er en tommelfingerregel, så sjekk kravet i prosjektet.</p></div>
+  </section>
+
+  <!-- 5 Vandrende punktlast -->
+  <section class="mod" id="punktlast">
+    <div class="mod-head"><span class="tag">Statikk · fritt opplagt bjelke</span><h2>Vandrende punktlast</h2></div>
+    <p>En last flyttes over bjelken. Reaksjonene fordeler seg etter avstand, skjærkraften hopper under lasten, og momentet har topp der lasten står. Den stiplede kurven viser størst mulig moment for hver posisjon.</p>
+    <div class="ctrl">
+      <label>Last P <input type="range" id="p-p" min="1" max="20" step="0.5" value="10"><output id="p-p-o"></output></label>
+      <label>Spenn L <input type="range" id="p-l" min="2" max="8" step="0.1" value="4"><output id="p-l-o"></output></label>
+      <label>Posisjon a <input type="range" id="p-a" min="0" max="1" step="0.005" value="0.3"><output id="p-a-o"></output></label>
+      <label><button id="p-auto" type="button">Stopp lasten</button></label>
+    </div>
+    <div class="viz"><svg id="p-svg" viewBox="0 0 640 400" role="img" aria-label="Bjelke med punktlast, skjærkraftdiagram og momentdiagram"></svg></div>
+    <pre class="calc" id="p-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Størst moment får du med lasten midt på: M = P·L/4. Størst skjær får du med lasten nær et opplegg, nesten hele P går da til det nærmeste opplegget.</li>
+      <li>Moment dimensjonerer midt i spennet, mens skjær og opplagertrykk dimensjonerer ved oppleggene. Det er derfor hakk ved opplegg er kritisk.</li>
+    </ul></div>
+  </section>
+
+  <!-- Bjelketyper -->
+  <section class="mod" id="bjelke">
+    <div class="mod-head"><span class="tag">Statikk · bjelketabeller</span><h2>Innspent eller fritt opplagt</h2></div>
+    <p>Samme bjelke og samme last gir helt ulike krefter avhengig av hvordan endene holdes. Velg bjelketype og retning på lasten. Bjelken bøyer seg, og kantene farges <b class="v-red">rødt for strekk</b> og <b class="v-blue">blått for trykk</b>. Når lasten snus til oppover, bytter strekk og trykk side.</p>
+    <div class="ctrl">
+      <label>Bjelketype <select id="e-case"><option value="ss">Fritt opplagt på to punkter, P midt på</option><option value="cl">Innspent utkrager, P på tuppen</option><option value="ff">Innspent i begge ender, P midt på</option></select></label>
+      <label>Lastretning <select id="e-dir"><option value="ned">Nedover</option><option value="opp">Oppover</option></select></label>
+      <label>Last P <input type="range" id="e-p" min="0.5" max="10" step="0.5" value="3"><output id="e-p-o"></output></label>
+      <label>Lengde L <input type="range" id="e-l" min="1" max="6" step="0.1" value="2.4"><output id="e-l-o"></output></label>
+      <label>Bjelke C24 <select id="e-s"><option>48x148</option><option selected>48x198</option><option>48x223</option><option>73x223</option><option>98x223</option></select></label>
+      <label><button id="e-auto" type="button">Stopp animasjon</button></label>
+    </div>
+    <div class="viz"><svg id="e-svg" viewBox="0 0 640 510" role="img" aria-label="Bjelke som bøyer seg under last, med strekk- og trykkside, reaksjoner, skjærkraft- og momentdiagram"></svg></div>
+    <pre class="calc" id="e-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Fritt opplagt:</b> Største moment er midt på, og største skjær er ved oppleggene. Med last nedover får du strekk i underkant.</li>
+      <li><b>Utkrager:</b> Både moment og skjær er størst ved innspenningen, og strekket er i <i>overkant</i>. Derfor ligger armeringen oppe i en betongbalkong, og hakk eller boring i overkant ved innspenningen er kritisk.</li>
+      <li><b>Samme P og L:</b> En utkrager får 4 ganger momentet og 16 ganger nedbøyningen sammenlignet med fritt opplagt. Innspenning i begge ender halverer momentet og gir en firedel av nedbøyningen.</li>
+      <li><b>Innspenning må bygges:</b> Forbindelsen må kunne ta moment. En bjelke som bare er lagt på eller boltet med ett beslag, er ikke innspent. En utkraget trebjelke trenger bakre forankring som tar motkraften.</li>
+      <li><b>Last oppover</b> kan komme fra vindsug på tak og takutstikk, fra en jekk eller fra en motvekt. Da snur reaksjonene, og oppleggene må forankres mot løft. Trykksonen flytter til den andre kanten. Hvis den kanten ikke er avstivet, for eksempel når gulvplatene ligger på oversiden, kan bjelken vippe.</li>
+    </ul><p class="note">C24 med E<sub>mean</sub> = 11 000 MPa, momentan nedbøyning uten kryp. f<sub>m,k</sub> = 24 MPa er en karakteristisk referanse og ikke en dimensjonerende kapasitet. Nedbøyningskravene er tommelfingerregler, så sjekk kravet i prosjektet.</p></div>
+  </section>
+
+  <!-- Statisk ubestemt -->
+  <section class="mod" id="ubestemt">
+    <div class="mod-head"><span class="tag">Statikk · kraftmetoden</span><h2>Innspent bjelke med opplegg, moment og utkraget last</h2></div>
+    <p>Bjelken er innspent i A og hviler på et opplegg i C. Et konsentrert moment M<sub>B</sub> virker i B og en kraft F<sub>D</sub> i D, mens E er fri ende. Det gir tre ukjente reaksjoner (R<sub>A</sub>, M<sub>A</sub> og R<sub>C</sub>), men bare to likevektslikninger, så systemet er <b>én gang statisk ubestemt</b>. Løsningen bruker superposisjon: fjern C, regn ut hvor mye punktet synker, og finn R<sub>C</sub> som presser det tilbake til null.</p>
+    <div class="ctrl">
+      <label>F<sub>D</sub> <input type="range" id="x-f" min="0" max="15" step="0.5" value="5"><output id="x-f-o"></output></label>
+      <label>M<sub>B</sub> (+ = medurs) <input type="range" id="x-m" min="-6" max="6" step="0.5" value="3"><output id="x-m-o"></output></label>
+      <label>Lengde A–E <input type="range" id="x-l" min="2" max="6" step="0.1" value="4"><output id="x-l-o"></output></label>
+      <label>Opplegg C fra A <input type="range" id="x-c" min="0.45" max="0.8" step="0.01" value="0.6"><output id="x-c-o"></output></label>
+      <label>Bjelke C24 <select id="x-s"><option>48x198</option><option>48x223</option><option selected>73x223</option><option>98x223</option><option>140x270</option></select></label>
+      <label><button id="x-prev" type="button">Forrige</button> <button id="x-next" type="button">Neste steg</button> <output id="x-step" style="text-align:left;min-width:0"></output></label>
+    </div>
+    <div class="viz"><svg id="x-svg" viewBox="0 0 640 520" role="img" aria-label="Innspent bjelke med opplegg i C, moment i B og kraft i D, løst steg for steg med superposisjon"></svg></div>
+    <pre class="calc" id="x-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Tell ukjente først.</b> Innspenningen i A gir R<sub>A</sub> og M<sub>A</sub>, og opplegget i C gir R<sub>C</sub>. Det er tre ukjente mot to likevektslikninger. Den ekstra likningen kommer fra deformasjonen: bjelken kan ikke bevege seg i C, altså w<sub>C</sub> = 0.</li>
+      <li><b>Kraftmetoden:</b> Fjern én ukjent, slik at du får en utkrager du kan regne med tabellformler. Legg deretter til den ukjente kraften så mye som trengs for å oppfylle kravet. Det er superposisjon (se egen modul) brukt på nedbøyning.</li>
+      <li><b>Vippe over C.</b> Kraften i D, utenfor opplegget, vipper bjelken over C og løfter A-enden. Med standardverdiene blir R<sub>A</sub> negativ, så innspenningen må holde bjelken <i>nede</i>. Forankringen i A er da i strekk.</li>
+      <li><b>Konsentrert moment:</b> M<sub>B</sub> gir et sprang i momentdiagrammet lik M<sub>B</sub>, men ingen endring i skjærkraften.</li>
+      <li><b>Følsomt for stivhet.</b> Fordelingen avhenger av EI og av hvor stive oppleggene er. Gir innspenningen etter, eller setter opplegg C seg, endres alle kreftene. Det gjør statisk ubestemte systemer følsomme for setninger og glidning i forbindelser.</li>
+    </ul><p class="note">Forutsetter konstant EI, små deformasjoner og lineært elastisk materiale. Posisjonene er A–B = 0,40·L og A–D = 0,85·L, og C kan flyttes mellom B og D. Nedbøyningen er beregnet med numerisk integrasjon og kontrollert mot formlene.</p></div>
+  </section>
+
+  <!-- Bjelketabell -->
+  <section class="mod" id="tabell">
+    <div class="mod-head"><span class="tag">Statikk · bjelketabell</span><h2>Bjelketabell: 21 lasttilfeller</h2></div>
+    <p>Velg et tilfelle fra tabellen. Du får figur, nedbøyd form, V- og M-diagram og formlene med tallene satt inn. Hver formel kontrolleres automatisk mot en numerisk beregning (FEM) av samme bjelke, og ✓ betyr at de stemmer.</p>
+    <div class="ctrl">
+      <label style="grid-column:1/-1">Tilfelle <select id="bt-case" style="flex:1;min-width:0"><optgroup label="2 Fritt opplagt bjelke"><option value="21">21 Jevnt fordelt last</option><option value="22">22 Jevnt fordelt last på deler av bjelken</option><option value="23">23 Skrått fordelt last</option><option value="24">24 Sentrisk punktlast</option><option value="25">25 Vilkårlig plassert punktlast</option><option value="26">26 To like punktlaster som er plassert symmetrisk</option><option value="27">27 To ulike punktlaster som er plassert usymmetrisk</option></optgroup><optgroup label="3 Utkraget bjelke"><option value="31">31 Jevnt fordelt last</option><option value="32">32 Punktlast ytterst</option><option value="33">33 Vilkårlig plassert punktlast</option></optgroup><optgroup label="4 Innspent i en ende, fritt opplagt i andre"><option value="41">41 Jevnt fordelt last</option><option value="42">42 Vilkårlig plassert punktlast</option></optgroup><optgroup label="5 Fritt opplagt bjelke med utkragning"><option value="51">51 Jevnt fordelt last</option><option value="52">52 Jevnt fordelt last på utkragningen</option></optgroup><optgroup label="6 Innspent i begge ender"><option value="61">61 Jevnt fordelt last</option><option value="62">62 Vilkårlig plassert punktlast</option></optgroup><optgroup label="7 Kontinuerlig bjelke, to like spenn"><option value="71">71 Jevnt fordelt last</option><option value="72">72 Jevnt fordelt last i ett felt</option><option value="73">73 Vilkårlig plassert punktlast</option><option value="74">74 Punktlast midt i hvert spenn</option></optgroup><optgroup label="8 Kontinuerlig bjelke, to ulike spenn"><option value="81">81 Jevnt fordelt last</option><option value="82">82 Punktlast midt i hvert spenn</option></optgroup></select></label>
+      <label data-need="L"><span id="bt-L-lab">Lengde L</span> <input type="range" id="bt-L" min="1" max="10" step="0.1" value="4"><output id="bt-L-o"></output></label>
+      <label data-need="L2">Spenn L₂ <input type="range" id="bt-L2" min="1" max="10" step="0.1" value="3"><output id="bt-L2-o"></output></label>
+      <label data-need="c"><span id="bt-c-lab">Utkragning c</span> <input type="range" id="bt-c" min="0.2" max="4" step="0.1" value="1.2"><output id="bt-c-o"></output></label>
+      <label data-need="q">Last q <input type="range" id="bt-q" min="0.5" max="10" step="0.1" value="2"><output id="bt-q-o"></output></label>
+      <label data-need="P">Last P <input type="range" id="bt-P" min="0.5" max="20" step="0.5" value="5"><output id="bt-P-o"></output></label>
+      <label data-need="P2">Last P₂ <input type="range" id="bt-P2" min="0.5" max="20" step="0.5" value="3"><output id="bt-P2-o"></output></label>
+      <label data-need="a"><span id="bt-a-lab">Posisjon a</span> <input type="range" id="bt-a" min="0.05" max="0.95" step="0.01" value="0.3"><output id="bt-a-o"></output></label>
+      <label data-need="a2">Posisjon P₂ <input type="range" id="bt-a2" min="0.05" max="0.95" step="0.01" value="0.7"><output id="bt-a2-o"></output></label>
+      <label>Tverrsnitt <select id="bt-s"><option>48x148</option><option selected>48x198</option><option>48x223</option><option>73x223</option><option>98x223</option><option>115x315 GL30c</option><option>140x405 GL30c</option></select></label>
+    </div>
+    <div class="viz"><svg id="bt-svg" viewBox="0 0 640 475" role="img" aria-label="Valgt lasttilfelle med last, opplegg, nedbøyd form, skjærkraft- og momentdiagram"></svg></div>
+    <pre class="calc" id="bt-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Fortegn:</b> M &gt; 0 gir strekk i underkant (felt), og M &lt; 0 gir strekk i overkant (over opplegg og ved innspenninger). Reaksjoner er positive oppover, og w er positiv nedover.</li>
+      <li><b>Statisk ubestemte tilfeller</b> (4, 6, 7 og 8) har momentformler som forutsetter konstant EI og stive opplegg. Gir et opplegg eller en innspenning etter, flytter momentet seg mot feltet.</li>
+      <li><b>Kontinuerlige bjelker:</b> Last i bare ett felt (72) gir større feltmoment enn last i begge feltene (71): 49/512 mot 36/512 av qL². Nyttelast skal derfor plasseres i ugunstigste felt.</li>
+      <li><b>Utkragning:</b> Last på utkragningen løfter det innerste opplegget (52 gir negativ R<sub>A</sub>). Dette opplegget må forankres.</li>
+      <li><b>Tilfellene kan kombineres med superposisjon:</b> legg sammen reaksjoner, M, V og w fra flere tilfeller med samme opplegg.</li>
+    </ul><p class="note">C24: E<sub>mean</sub> = 11 000 MPa. GL30c: E<sub>mean</sub> = 13 000 MPa. Nedbøyningen er momentan, uten kryp. f<sub>m,k</sub> er en karakteristisk referanse, og L/300 og L/150 er tommelfingerregler. Formlene er utledet med elastisk bjelketeori (Euler–Bernoulli) og kontrollert numerisk.</p>
+    <div class="think"><b>9 Referanser</b><ul>
+      <li>NS-EN 1990 Eurokode: Grunnlag for prosjektering av konstruksjoner (lastkombinasjoner og bruksgrense).</li>
+      <li>NS-EN 1991-1-1 Eurokode 1: Laster på konstruksjoner, egenvekt og nyttelast.</li>
+      <li>NS-EN 1995-1-1 Eurokode 5: Prosjektering av trekonstruksjoner (bøyning, skjær, nedbøyning og kryp).</li>
+      <li>NS-EN 338 Konstruksjonstrevirke, fasthetsklasser (C24). NS-EN 14080 Limtre (GL30c).</li>
+      <li>Klassisk elastisk bjelketeori: elastisitetslinjens differensiallikning EI·w⁗ = q og tremomentlikningen for kontinuerlige bjelker.</li>
+    </ul></div>
+  </section>
+
+
+  <!-- Superposisjon -->
+  <section class="mod" id="super">
+    <div class="mod-head"><span class="tag">Statikk · superposisjonsprinsippet</span><h2>Superposisjon: last for last</h2></div>
+    <p>Når konstruksjonen oppfører seg lineært, kan hver last regnes for seg og resultatene legges sammen. Animasjonen tar momentdiagrammet fra punktlasten og legger det oppå diagrammet fra den jevne lasten, på samme måte som cos² ble lagt oppå sin².</p>
+    <div class="ctrl">
+      <label>Jevn last q <input type="range" id="u-q" min="0" max="4" step="0.1" value="2"><output id="u-q-o"></output></label>
+      <label>Punktlast P <input type="range" id="u-p" min="0" max="20" step="0.5" value="8"><output id="u-p-o"></output></label>
+      <label>Posisjon a <input type="range" id="u-a" min="0.1" max="0.9" step="0.01" value="0.35"><output id="u-a-o"></output></label>
+      <label>Spenn L <input type="range" id="u-l" min="2" max="8" step="0.1" value="5"><output id="u-l-o"></output></label>
+      <label>Visning <input type="range" id="u-m" min="0" max="1" step="0.01" value="0"><output id="u-m-o"></output></label>
+      <label><button id="u-auto" type="button">Stopp animasjon</button></label>
+    </div>
+    <div class="viz"><svg id="u-svg" viewBox="0 0 640 470" role="img" aria-label="Momentdiagram for jevn last og punktlast hver for seg og summert"></svg></div>
+    <pre class="calc" id="u-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Hver last regnes alene med enkle standardformler. Deretter summeres moment, skjær, reaksjoner og nedbøyning punkt for punkt.</li>
+      <li>Største sum er ikke det samme som summen av de største verdiene, fordi maksimumene ligger på forskjellige steder. Summen av maksimaler er en konservativ snarvei.</li>
+      <li>Lastkombinasjonene i NS-EN 1990 bygger på dette. Hver last beregnes alene og kombineres deretter med lastfaktorer.</li>
+      <li>Prinsippet gjelder bare ved lineære forhold, altså lineær-elastisk materiale og små forskyvninger. Det gjelder ikke ved knekking (andre ordens effekter), plastisk oppførsel eller glidning i forbindelser.</li>
+    </ul></div>
+  </section>
+
+  <!-- 6 Skråstag -->
+  <section class="mod" id="stag">
+    <div class="mod-head"><span class="tag">Avstivning · dekomponering</span><h2>Skråstag i veggfelt</h2></div>
+    <p>En horisontal kraft H (vind) tas av et skråstag. Staget må ha en kraft der den horisontale komponenten er H, altså <b>N = H / cos α</b>. Jo smalere feltet er, jo brattere blir staget, og jo større blir kraften.</p>
+    <div class="ctrl">
+      <label>Feltbredde b <input type="range" id="s-b" min="0.6" max="4.8" step="0.1" value="1.2"><output id="s-b-o"></output></label>
+      <label>Horisontalkraft H <input type="range" id="s-h" min="1" max="10" step="0.5" value="5"><output id="s-h-o"></output></label>
+    </div>
+    <div class="viz"><svg id="s-svg" viewBox="0 0 640 330" role="img" aria-label="Veggfelt med skråstag, krefter og kurve for stagkraft mot vinkel"></svg></div>
+    <pre class="calc" id="s-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Ved 45° er N = 1,41·H. Ved 70° er N = 2,9·H. Smale felt gir store krefter i både stag og forankring.</li>
+      <li>Den vertikale komponenten N·sin α er nøyaktig forankringskraften T i hjørnet. Avstivning uten forankring av hjørnet virker ikke.</li>
+      <li>Som tommelfingerregel bør avstivningen ligge i brede felt med staget nær 45°.</li>
+    </ul><p class="note">Feltet er 2,4 m høyt. Eksemplet viser kraftgangen og er ikke dimensjonering av stag eller forbindelser.</p></div>
+  </section>
+
+  <!-- Knutepunktsmetoden -->
+  <section class="mod" id="knute">
+    <div class="mod-head"><span class="tag">Fagverk · knutepunktsmetoden</span><h2>Knutepunktsmetoden</h2></div>
+    <p>Et fagverk løses ett knutepunkt om gangen. I hvert knutepunkt gir ΣF<sub>x</sub> = 0 og ΣF<sub>y</sub> = 0 to likninger, så du må starte i et knutepunkt med høyst to ukjente stavkrefter. Kraftpolygonet til høyre lukker seg når knutepunktet er i likevekt.</p>
+    <div class="ctrl">
+      <label>Spenn L <input type="range" id="j-l" min="4" max="10" step="0.5" value="8"><output id="j-l-o"></output></label>
+      <label>Takvinkel α <input type="range" id="j-a" min="15" max="45" step="1" value="30"><output id="j-a-o"></output></label>
+      <label>Last i møne P<sub>C</sub> <input type="range" id="j-pc" min="0" max="20" step="0.5" value="10"><output id="j-pc-o"></output></label>
+      <label>Last i D P<sub>D</sub> <input type="range" id="j-pd" min="0" max="10" step="0.5" value="2"><output id="j-pd-o"></output></label>
+      <label><button id="j-prev" type="button">Forrige</button> <button id="j-next" type="button">Neste steg</button> <output id="j-step" style="text-align:left;min-width:0"></output></label>
+    </div>
+    <div class="viz"><svg id="j-svg" viewBox="0 0 640 340" role="img" aria-label="Fagverk løst knutepunkt for knutepunkt med kraftpolygon"></svg></div>
+    <pre class="calc" id="j-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Velg rekkefølge etter antall ukjente. D har bare én ukjent i y-retning, deretter C, deretter A.</li>
+      <li>Anta strekk i alle staver. Et negativt svar betyr trykk, og da blir fortegnene riktige av seg selv.</li>
+      <li>Nullstav: Hvis P<sub>D</sub> = 0, får CD ingen kraft. Den kan likevel trengs for å avstive eller bære himling.</li>
+      <li>Trykkstavene må i tillegg kontrolleres for knekking, og strekkstaven for forbindelsene i endene.</li>
+    </ul><p class="note">Modellen forutsetter leddede knutepunkter og laster bare i knutepunktene. Rød = strekk, blå = trykk, og tykkelsen viser størrelsen.</p></div>
+  </section>
+
+  <!-- Strekkstag -->
+  <section class="mod" id="strekk">
+    <div class="mod-head"><span class="tag">Takkonstruksjon · horisontalskyv</span><h2>Strekkraft i stag (sperretak)</h2></div>
+    <p>I et sperretak uten bærende mønsås skyver sperrene foten utover. Et stag mellom sperreføttene, enten en bindbjelke eller et strekkbånd, tar skyvet som strekk. Kraften går med 1/tan α, så slake tak gir store krefter.</p>
+    <div class="ctrl">
+      <label>Bredde B <input type="range" id="g-b" min="4" max="12" step="0.2" value="8"><output id="g-b-o"></output></label>
+      <label>Takvinkel α <input type="range" id="g-a" min="10" max="50" step="1" value="30"><output id="g-a-o"></output></label>
+      <label>Last q (per m horisontalt) <input type="range" id="g-q" min="0.5" max="4" step="0.1" value="1.8"><output id="g-q-o"></output></label>
+    </div>
+    <div class="viz"><svg id="g-svg" viewBox="0 0 640 330" role="img" aria-label="Sperretak med strekkstag mellom sperreføttene og kurve for strekkraft mot takvinkel"></svg></div>
+    <pre class="calc" id="g-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Går takvinkelen fra 30° til 15°, blir strekkraften 2,15 ganger større (tan 30° / tan 15° = 0,577 / 0,268).</li>
+      <li>Uten stag må veggene ta H som horisontalkraft på toppen. Det gir utbøyde langvegger.</li>
+      <li>Forbindelsene i sperrefoten må dimensjoneres for H, ofte med bolter eller skruer i skjær (se boltmodulen).</li>
+      <li>Sitter staget høyere opp, som en hanebjelke, blir kraften større og sperrene får bøyning. Modellen her gjelder stag i sperrefoten.</li>
+    </ul><p class="note">Modellen har ledd i mønet og ved foten og symmetrisk last. Skjev snølast gir andre krefter.</p></div>
+  </section>
+
+  <!-- Fagverksbro -->
+  <section class="mod" id="bro">
+    <div class="mod-head"><span class="tag">Fagverk · knutepunktsmetoden og snittmetoden</span><h2>Fagverksbro med kjøretøy</h2></div>
+    <p>Et fagverk er en bjelke med hull. Når kjøretøyet kjører over brua, beregnes alle stavkreftene på nytt ved å løse likevekt i hvert knutepunkt samtidig. <b class="v-red">Rødt er strekk</b>, <b class="v-blue">blått er trykk</b>, og tykkelsen viser størrelsen. Snittet kontrollerer resultatet med bjelkeanalogien: gurtkraften er M/h, og diagonalen tar skjærkraften.</p>
+    <div class="ctrl">
+      <label>Fagverkstype <select id="w-type"><option value="warren" selected>Warren med vertikaler</option><option value="pratt">Pratt</option><option value="howe">Howe</option></select></label>
+      <label>Antall felt <select id="w-n"><option>4</option><option selected>6</option><option>8</option><option>10</option></select></label>
+      <label>Spenn L <input type="range" id="w-l" min="12" max="48" step="2" value="24"><output id="w-l-o"></output></label>
+      <label>Høyde h <input type="range" id="w-h" min="2" max="8" step="0.5" value="4"><output id="w-h-o"></output></label>
+      <label>Kjøretøy P <input type="range" id="w-p" min="0" max="300" step="10" value="100"><output id="w-p-o"></output></label>
+      <label>Egenvekt per knutepunkt <input type="range" id="w-g" min="0" max="40" step="2" value="10"><output id="w-g-o"></output></label>
+      <label>Posisjon <input type="range" id="w-x" min="0" max="1" step="0.002" value="0.375"><output id="w-x-o"></output></label>
+      <label>Snitt <input type="range" id="w-cut" min="2" max="5" step="1" value="3"><output id="w-cut-o"></output></label>
+      <label><button id="w-auto" type="button">Stopp kjøretøyet</button></label>
+    </div>
+    <div class="viz"><svg id="w-svg" viewBox="0 0 640 440" role="img" aria-label="Fagverksbro med kjøretøy, stavkrefter farget etter strekk og trykk, snitt og momentdiagram"></svg></div>
+    <pre class="calc" id="w-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Bjelke med hull:</b> Overgurten tar trykk og undergurten strekk, og gurtkraften er omtrent M/h. Diagonalene tar skjærkraften. Det er samme prinsipp som i Steinertillegget: materialet legges langt fra nøytralaksen.</li>
+      <li><b>Høyden styrer gurtkreftene.</b> Dobbel høyde halverer dem. Lave fagverk blir tunge.</li>
+      <li><b>Pratt:</b> diagonalene går i strekk og kan være slanke, mens vertikalene går i trykk. <b>Howe</b> er det motsatte: diagonalene går i trykk og vertikalene i strekk. Howe ble mye brukt i tre, med tre i trykkdiagonalene og stålstag i vertikalene. Hvert materiale får da den kraften det tåler best.</li>
+      <li><b>Vandrende last snur kreftene.</b> Følg diagonalene nær midten mens kjøretøyet passerer. Noen bytter fra strekk til trykk, og en slank strekkdiagonal kan da knekke. Det er derfor eldre bruer har kryssdiagonaler (motdiagonaler) i midtfeltene.</li>
+      <li><b>Trykkstaver må kontrolleres for knekking</b> (se knekkmodulen). Overgurten er lang og i trykk, og derfor er den avstivet sideveis med vindavstivning på toppen, som på bildet.</li>
+      <li><b>Lasten går inn i knutepunktene.</b> Brudekket hviler på tverrbærere i knutepunktene, slik at stavene bare får aksialkraft. Modellen forutsetter leddede knutepunkter.</li>
+    </ul><p class="note">Modellen viser ett av to fagverk i plan. Lastene er eksempelverdier og ikke trafikklast etter NS-EN 1991-2. Stavkreftene løses med likevekt i alle knutepunkter samtidig (2 likninger per knutepunkt) og kontrolleres mot snittmetoden.</p></div>
+  </section>
+
+  <!-- 7 Mohr -->
+  <section class="mod" id="mohr">
+    <div class="mod-head"><span class="tag">Spenningsanalyse · plan spenning</span><h2>Mohrs sirkel</h2></div>
+    <p>Elementet dreies med vinkelen θ. Spenningene på de skrå flatene følger cos 2θ og sin 2θ, så punktet går rundt en sirkel med dobbel vinkel. Det er enhetssirkelen igjen, bare flyttet og skalert.</p>
+    <div class="ctrl">
+      <label>σ<sub>x</sub> <input type="range" id="m-sx" min="-10" max="10" step="0.5" value="4"><output id="m-sx-o"></output></label>
+      <label>σ<sub>y</sub> <input type="range" id="m-sy" min="-10" max="10" step="0.5" value="0"><output id="m-sy-o"></output></label>
+      <label>τ<sub>xy</sub> <input type="range" id="m-t" min="-6" max="6" step="0.5" value="2"><output id="m-t-o"></output></label>
+      <label>Vinkel θ <input type="range" id="m-th" min="0" max="180" step="1" value="30"><output id="m-th-o"></output></label>
+      <label><button id="m-auto" type="button">Stopp rotasjon</button></label>
+    </div>
+    <div class="viz"><svg id="m-svg" viewBox="0 0 640 320" role="img" aria-label="Spenningselement som roteres og tilhørende Mohrs sirkel"></svg></div>
+    <pre class="calc" id="m-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li>Sett σ<sub>x</sub> = σ<sub>y</sub> = 0 og bare τ. Da ligger største strekkspenning på 45°. Det er derfor skjærriss i betongbjelker går skrått nær oppleggene, og hvorfor bøyler trengs.</li>
+      <li>Hovedspenningene σ<sub>1</sub> og σ<sub>2</sub> er der sirkelen krysser σ-aksen. Der er skjærspenningen null.</li>
+    </ul></div>
+  </section>
+
+  <footer><p>Eksemplene er laget for å forstå mekanikken og for overslag. De erstatter ikke prosjektering etter Eurokode med lastkombinasjoner, materialfaktorer og ansvarlig prosjekterende.</p><p><b>Det kontrollen ikke dekker:</b> Formlene er kontrollert mot uavhengig regning, men ikke mot originalkilden til bjelketabellen din. Lastverdiene er eksempler, og bruddkontrollen bruker karakteristiske verdier uten k<sub>mod</sub> og γ<sub>M</sub>. Appen viser mekanikken og egner seg til overslag, men er ikke en dimensjonering.</p></footer>
+</div>
+
+<script>
+(() => {
+  const C = { a: '#e9b45c', b: '#3fa9d6', r: '#ee5a6f', g: '#b5dc4c', fg: '#e8eaec', mu: '#9aa3ab', ln: '#2f363c', grid: '#20262b', wood: '#d8c3a0', woodFill: '#3a3024' };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = id => document.getElementById(id);
+  const n = (v, d = 2) => { if (Math.abs(v) < 0.5 * 10 ** -d) v = 0; return v.toLocaleString('nb-NO', { minimumFractionDigits: d, maximumFractionDigits: d }); };
+  const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+  const txt = (x, y, t, o = {}) => `<text x="${x}" y="${y}" fill="${o.c || C.mu}" font-size="${o.s || 12}" text-anchor="${o.a || 'start'}"${o.w ? ` font-weight="${o.w}"` : ''}>${t}</text>`;
+  const line = (x1, y1, x2, y2, c, w = 1, dash) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+  const path = (pts, c, w = 2, dash, fill = 'none', op = 1) => `<path d="${pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ')}" fill="${fill}" fill-opacity="${op}" stroke="${c}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ''} stroke-linejoin="round"/>`;
+  function arrow(x1, y1, x2, y2, c, w = 2) {
+    const a = Math.atan2(y2 - y1, x2 - x1), len = Math.hypot(x2 - x1, y2 - y1);
+    if (len < 3) return '';
+    const h = Math.min(9, len * 0.6), hx = x2 - h * Math.cos(a), hy = y2 - h * Math.sin(a), px = 4.5 * Math.sin(a), py = 4.5 * Math.cos(a);
+    return line(x1, y1, hx, hy, c, w) + `<polygon fill="${c}" points="${x2},${y2} ${hx + px},${hy - py} ${hx - px},${hy + py}"/>`;
+  }
+  const sample = (a, b, f, N = 120) => Array.from({ length: N + 1 }, (_, i) => { const x = a + (b - a) * i / N; return [x, f(x)]; });
+  function nice(max) {
+    const p = 10 ** Math.floor(Math.log10(max)), m = max / p;
+    const step = (m <= 1.5 ? 0.25 : m <= 3 ? 0.5 : m <= 6 ? 1 : 2) * p;
+    return { max: Math.ceil(max / step) * step, step };
+  }
+  const ticks = (min, max, step) => { const t = []; for (let v = min; v <= max + step * 1e-6; v += step) t.push(+v.toFixed(6)); return t; };
+  function axes(o) {
+    const X = v => o.x + (v - o.xr[0]) / (o.xr[1] - o.xr[0]) * o.w;
+    const Y = v => o.y + o.h - (v - o.yr[0]) / (o.yr[1] - o.yr[0]) * o.h;
+    let s = '';
+    (o.xt || []).forEach(v => { s += line(X(v), o.y, X(v), o.y + o.h, C.grid) + txt(X(v), o.y + o.h + 16, o.fx ? o.fx(v) : v, { a: 'middle', s: 11 }); });
+    (o.yt || []).forEach(v => { s += line(o.x, Y(v), o.x + o.w, Y(v), C.grid) + txt(o.x - 6, Y(v) + 4, o.fy ? o.fy(v) : v, { a: 'end', s: 11 }); });
+    s += line(o.x, o.y + o.h, o.x + o.w, o.y + o.h, C.mu) + line(o.x, o.y, o.x, o.y + o.h, C.mu);
+    if (o.xl) s += txt(o.x + o.w, o.y + o.h + 32, o.xl, { a: 'end', s: 11 });
+    if (o.yl) s += txt(o.x - 30, o.y - 10, o.yl, { s: 11 });
+    return { s, X, Y };
+  }
+  const support = (x, y) => `<polygon points="${x},${y} ${x - 10},${y + 17} ${x + 10},${y + 17}" fill="none" stroke="${C.fg}" stroke-width="1.5"/>`;
+  function fixedBlock(x, y, up) {     // innspenning: skravert kloss over/under y
+    const h = 10, y0 = up ? y - h : y;
+    let s = `<rect x="${x - 32}" y="${y0}" width="64" height="${h}" fill="#252b30" stroke="${C.fg}" stroke-width="1.2"/>`;
+    for (let i = -28; i <= 24; i += 8) s += line(x + i, y0 + h, x + i + 8, y0, C.mu, 0.8);
+    return s;
+  }
+  const bind = (ids, fn) => ids.forEach(id => $(id).addEventListener('input', fn));
+
+  // ---------- 1. Fiberretning ----------
+  const WOOD = { C18: [18, 2.2], C24: [21, 2.5], C30: [24, 2.7] };
+  function fiber() {
+    const al = +$('f-a').value, kc = +$('f-k').value, [f0, f90] = WOOD[$('f-c').value];
+    $('f-a-o').textContent = al + '°'; $('f-k-o').textContent = n(kc, 2);
+    const fa = a => { const s2 = Math.sin(rad(a)) ** 2; return f0 / ((f0 / (kc * f90)) * s2 + (1 - s2)); };
+    const cx = 135, cy = 150, dx = Math.cos(rad(al)), dy = -Math.sin(rad(al));
+    let s = `<defs><clipPath id="fclip"><rect x="45" y="90" width="180" height="120"/></clipPath></defs>`;
+    s += `<rect x="45" y="90" width="180" height="120" fill="${C.woodFill}"/>`;
+    let g = '';
+    for (let k = -14; k <= 14; k++) { const ox = -dy * k * 10, oy = dx * k * 10; g += line(cx + ox - dx * 220, cy + oy - dy * 220, cx + ox + dx * 220, cy + oy + dy * 220, C.wood, 1); }
+    s += `<g clip-path="url(#fclip)" opacity="0.55">${g}</g>`;
+    s += `<rect x="45" y="90" width="180" height="120" fill="none" stroke="${C.wood}" stroke-width="1.5"/>`;
+    s += line(cx - 80, cy, cx + 80, cy, C.fg, 1, '4 4');
+    s += line(cx - dx * 70, cy - dy * 70, cx + dx * 70, cy + dy * 70, C.a, 2.5);
+    if (al > 1) s += `<path d="M ${cx + 40} ${cy} A 40 40 0 0 0 ${cx + 40 * dx} ${cy + 40 * dy}" fill="none" stroke="${C.a}"/>` + txt(cx + 48 * Math.cos(rad(al / 2)), cy - 48 * Math.sin(rad(al / 2)) + 4, 'α', { c: C.a, s: 14 });
+    s += arrow(0, cy, 41, cy, C.fg, 2.5) + arrow(270, cy, 229, cy, C.fg, 2.5);
+    s += txt(135, 240, 'fiberretning (gul) og kraft (hvit)', { a: 'middle', s: 11 });
+    const ym = nice(f0 * 1.05);
+    const ax = axes({ x: 340, y: 30, w: 270, h: 210, xr: [0, 90], yr: [0, ym.max], xt: [0, 15, 30, 45, 60, 75, 90], yt: ticks(0, ym.max, ym.step * (ym.max / ym.step > 6 ? 2 : 1)), fx: v => v + '°', xl: 'α', yl: 'f_c,α,k (MPa)' });
+    s += ax.s;
+    s += path(sample(0, 90, fa).map(([x, y]) => [ax.X(x), ax.Y(y)]), C.a, 2.5);
+    const fv = fa(al), px = ax.X(al), py = ax.Y(fv);
+    s += line(px, py, px, ax.Y(0), C.a, 1, '3 3') + line(ax.X(0), py, px, py, C.a, 1, '3 3');
+    s += `<circle cx="${px}" cy="${py}" r="5" fill="${C.a}"/>` + txt(px + 8, py - 8, n(fv, 1) + ' MPa', { c: C.fg });
+    $('f-svg').innerHTML = s;
+    const s2 = Math.sin(rad(al)) ** 2, c2 = 1 - s2, r = f0 / (kc * f90), den = r * s2 + c2, f = f0 / den;
+    $('f-calc').textContent =
+`r        = f_c,0,k / (k_c,90 · f_c,90,k) = ${n(f0, 1)} / (${n(kc, 2)} · ${n(f90, 1)}) = ${n(r, 2)}
+sin²α    = sin²${al}° = ${n(s2, 3)}          cos²α = ${n(c2, 3)}
+nevner   = r · sin²α + cos²α = ${n(r, 2)} · ${n(s2, 3)} + ${n(c2, 3)} = ${n(den, 3)}
+f_c,α,k  = f_c,0,k / nevner = ${n(f0, 1)} / ${n(den, 3)} = ${n(f, 2)} MPa   (${n(f / f0 * 100, 0)} % av f_c,0,k)`;
+  }
+  bind(['f-a', 'f-c', 'f-k'], fiber);
+
+  // ---------- 2. Knekking ----------
+  const SEC = { '48x98': [48, 98], '48x148': [48, 148], '48x198': [48, 198], '98x98': [98, 98], '148x148': [148, 148] };
+  const BETA = { pp: 1, cf: 2, ff: 0.5 };
+  let kPhase = 1.2;
+  function knekk() {
+    const cs = $('k-case').value, L = +$('k-l').value, [b, h] = SEC[$('k-s').value], E = 7400, fc0 = 21, beta = BETA[cs];
+    $('k-l-o').textContent = n(L, 1) + ' m';
+    const I = h * b ** 3 / 12, Lk = beta * L * 1000, Ncr = Math.PI ** 2 * E * I / Lk ** 2 / 1000, i = b / Math.sqrt(12), lam = Lk / i;
+    const lrel = lam / Math.PI * Math.sqrt(fc0 / E);
+    const amp = 30 * (0.6 + 0.4 * Math.sin(kPhase));
+    const xc = 150, cf = cs === 'cf', Lpx = cf ? 135 : 270, base = cf ? 185 : 315, top = base - Lpx;
+    const shape = z => cs === 'pp' ? Math.sin(Math.PI * z) : cf ? 1 - Math.cos(Math.PI * z / 2) : (1 - Math.cos(2 * Math.PI * z)) / 2;
+    const P = z => [xc + amp * shape(z), base - z * Lpx];
+    let s = line(xc, top - 10, xc, base, C.ln, 1, '4 4');
+    if (cf) s += path(sample(-1, 0, z => z).map(([z]) => P(z)), C.mu, 1.5, '5 5') + txt(xc + 40, base + 70, 'tenkt speilbilde', { s: 11 });
+    s += path(sample(0, 1, z => z).map(([z]) => P(z)), C.wood, 9);
+    if (cs === 'pp') s += support(xc, base) + `<polygon points="${xc + amp * shape(1)},${top} ${xc + amp * shape(1) - 10},${top - 17} ${xc + amp * shape(1) + 10},${top - 17}" fill="none" stroke="${C.fg}" stroke-width="1.5"/>`;
+    else s += fixedBlock(xc, base, false);
+    if (cs === 'ff') s += fixedBlock(xc, top, true);
+    const tx = P(1)[0];
+    s += arrow(tx, top - (cs === 'cf' ? 55 : 72), tx, top - (cs === 'cf' ? 4 : 20), C.fg, 2.5) + txt(tx + 8, top - 50, 'N', { c: C.fg, s: 14 });
+    // L og L_k
+    s += line(60, top, 60, base, C.mu, 1) + line(54, top, 66, top, C.mu) + line(54, base, 66, base, C.mu) + txt(52, (top + base) / 2 + 4, 'L', { a: 'end', c: C.fg, s: 13 });
+    let ka, kb;
+    if (cs === 'pp') { ka = top; kb = base; }
+    else if (cf) { ka = top; kb = base + Lpx; }
+    else { ka = base - 0.75 * Lpx; kb = base - 0.25 * Lpx; s += [0.25, 0.75].map(z => `<circle cx="${P(z)[0]}" cy="${P(z)[1]}" r="4" fill="${C.b}"/>`).join('') + txt(P(0.75)[0] + 10, P(0.75)[1] - 6, 'vendepunkt', { c: C.b, s: 11 }); }
+    s += line(250, ka, 250, kb, C.b, 2) + line(243, ka, 257, ka, C.b, 2) + line(243, kb, 257, kb, C.b, 2);
+    s += txt(260, (ka + kb) / 2, 'L_k = ' + n(beta, 1) + '·L', { c: C.b, s: 12 }) + txt(260, (ka + kb) / 2 + 16, '= ' + n(Lk / 1000, 2) + ' m', { c: C.b, s: 12 });
+    // Kurve N_cr mot L
+    const Nfun = Lm => Math.PI ** 2 * E * I / (beta * Lm * 1000) ** 2 / 1000;
+    const ym = nice(Nfun(1.5));
+    const ax = axes({ x: 410, y: 30, w: 205, h: 270, xr: [1.5, 4], yr: [0, ym.max], xt: [1.5, 2, 2.5, 3, 3.5, 4], yt: ticks(0, ym.max, ym.step * (ym.max / ym.step > 6 ? 2 : 1)), fx: v => n(v, 1), xl: 'L (m)', yl: 'N_cr (kN)' });
+    s += ax.s + path(sample(1.5, 4, Nfun).map(([x, y]) => [ax.X(x), ax.Y(y)]), C.a, 2.5);
+    s += `<circle cx="${ax.X(L)}" cy="${ax.Y(Ncr)}" r="5" fill="${C.a}"/>` + txt(ax.X(L) + 8, ax.Y(Ncr) - 8, n(Ncr, 1) + ' kN', { c: C.fg });
+    $('k-svg').innerHTML = s;
+    $('k-calc').textContent =
+`I_min  = h · b³ / 12 = ${h} · ${b}³ / 12 = ${n(I, 0)} mm⁴   (svak akse)
+L_k    = β · L = ${n(beta, 1)} · ${n(L * 1000, 0)} = ${n(Lk, 0)} mm
+N_cr   = π² · E_0,05 · I / L_k² = 9,870 · 7 400 · ${n(I, 0)} / ${n(Lk, 0)}² = ${n(Ncr, 1)} kN
+i      = b / √12 = ${b} / 3,464 = ${n(i, 2)} mm        λ = L_k / i = ${n(lam, 0)}
+λ_rel  = λ/π · √(f_c,0,k / E_0,05) = ${n(lam, 0)}/3,142 · √(21 / 7 400) = ${n(lrel, 2)}   ${lrel > 0.3 ? '> 0,3: knekking må kontrolleres (k_c)' : '≤ 0,3: ingen knekkreduksjon'}`;
+  }
+  bind(['k-case', 'k-l', 'k-s'], knekk);
+
+  // ---------- 3. Høykant eller flatt ----------
+  const TS = { '36x148': [36, 148], '48x98': [48, 98], '48x148': [48, 148], '48x198': [48, 198], '48x223': [48, 223] };
+  function tvers() {
+    const [b, h] = TS[$('t-s').value], M = +$('t-m').value;
+    $('t-m-o').textContent = n(M, 1) + ' kNm';
+    const Wh = b * h * h / 6, Wf = h * b * b / 6, sh = M * 1e6 / Wh, sf = M * 1e6 / Wf;
+    const k = 200 / 223, ks = 70 / Math.max(sf, 1e-9), cy = 160;
+    let s = '';
+    const panel = (cx, w, hgt, x0, sig, title) => {
+      let p = txt(cx, 34, title, { a: 'middle', c: C.fg, s: 14, w: 600 });
+      p += `<rect x="${cx - w / 2}" y="${cy - hgt / 2}" width="${w}" height="${hgt}" fill="${C.woodFill}" stroke="${C.wood}" stroke-width="1.5"/>`;
+      p += line(cx - w / 2 - 12, cy, x0 + 80, cy, C.mu, 1, '4 4');
+      const t = cy - hgt / 2, bt = cy + hgt / 2, d = sig * ks;
+      p += line(x0, t, x0, bt, C.mu, 1);
+      p += `<polygon points="${x0},${t} ${x0 + d},${t} ${x0},${cy}" fill="${C.r}" fill-opacity="0.45" stroke="${C.r}"/>`;
+      p += `<polygon points="${x0},${cy} ${x0 - d},${bt} ${x0},${bt}" fill="${C.b}" fill-opacity="0.45" stroke="${C.b}"/>`;
+      const over = sig > 24;
+      p += txt(x0, t - 8, '−' + n(sig, 1) + ' trykk', { c: over ? C.r : C.fg, s: 12, a: 'middle' });
+      p += txt(x0, bt + 18, '+' + n(sig, 1) + ' strekk', { c: over ? C.r : C.fg, s: 12, a: 'middle' });
+      p += txt(cx, 290, 'W = ' + n(title === 'Høykant' ? Wh : Wf, 0) + ' mm³', { a: 'middle', s: 12 });
+      return p;
+    };
+    s += panel(95, b * k, h * k, 190, sh, 'Høykant');
+    s += panel(345, h * k, b * k, 545, sf, 'Flatt');
+    s += txt(620, 290, 'σ i MPa, samme skala', { a: 'end', s: 11 });
+    $('t-svg').innerHTML = s;
+    $('t-calc').textContent =
+`Høykant: W = b·h²/6 = ${b}·${h}²/6 = ${n(Wh, 0)} mm³    σ = M/W = ${n(M, 2)}·10⁶ / ${n(Wh, 0)} = ${n(sh, 2)} MPa
+Flatt:   W = h·b²/6 = ${h}·${b}²/6 = ${n(Wf, 0)} mm³    σ = M/W = ${n(M, 2)}·10⁶ / ${n(Wf, 0)} = ${n(sf, 2)} MPa
+Styrke:  W_høy / W_flat = h/b = ${h}/${b} = ${n(h / b, 2)}
+Stivhet: I_høy / I_flat = (h/b)² = ${n(h / b, 2)}² = ${n((h / b) ** 2, 1)}
+Referanse: f_m,k (C24) = 24 MPa (karakteristisk)${sf > 24 ? '   → flatt er over referansen' : ''}`;
+  }
+  bind(['t-s', 't-m'], tvers);
+
+  // ---------- 4. Nedbøyning ----------
+  const ND = { '48x148': [48, 148], '48x198': [48, 198], '48x223': [48, 223], '73x223': [73, 223] };
+  function nedb() {
+    const L = +$('n-l').value, q = +$('n-q').value, [b, h] = ND[$('n-s').value], E = 11000, I = b * h ** 3 / 12;
+    $('n-l-o').textContent = n(L, 1) + ' m'; $('n-q-o').textContent = n(q, 1) + ' kN/m';
+    const w = Lm => 5 * q * (Lm * 1000) ** 4 / (384 * E * I);
+    const wL = w(L), lim = L * 1000 / 300, Lmax = Math.cbrt(384 * E * I / (1500 * q)) / 1000;
+    const x0 = 30, k = 50, x1 = x0 + L * k, by = 110, dscale = Math.min(3, 70 / Math.max(wL, 1e-6));
+    let s = '';
+    for (let i = 0; i <= 10; i++) { const x = x0 + (x1 - x0) * i / 10; s += arrow(x, by - 44, x, by - 8, C.mu, 1.2); }
+    s += line(x0, by - 44, x1, by - 44, C.mu, 1.2);
+    s += line(x0, by, x1, by, C.ln, 1, '4 4');
+    const shp = z => 3.2 * (z - 2 * z ** 3 + z ** 4);
+    s += path(sample(0, 1, z => z).map(([z]) => [x0 + z * (x1 - x0), by + shp(z) * wL * dscale]), C.wood, 7);
+    s += support(x0, by + 4) + support(x1, by + 4);
+    s += txt((x0 + x1) / 2, by + wL * dscale + 34, 'w = ' + n(wL, 1) + ' mm', { a: 'middle', c: wL > lim ? C.r : C.fg, s: 13 });
+    s += txt((x0 + x1) / 2, by + wL * dscale + 50, `forstørret ${n(dscale, 1)} px per mm`, { a: 'middle', s: 10 });
+    s += txt(x0, 300, 'L = ' + n(L, 1) + ' m', { s: 12, c: C.fg });
+    // Kurve
+    const ym = nice(Math.max(w(6) > 120 ? 60 : w(6) * 1.05, lim * 2, 10));
+    const ax = axes({ x: 390, y: 30, w: 225, h: 250, xr: [2, 6], yr: [0, ym.max], xt: [2, 3, 4, 5, 6], yt: ticks(0, ym.max, ym.step * (ym.max / ym.step > 6 ? 2 : 1)), fx: v => v, xl: 'L (m)', yl: 'w (mm)' });
+    s += `<defs><clipPath id="nclip"><rect x="390" y="30" width="225" height="250"/></clipPath></defs>` + ax.s;
+    s += `<g clip-path="url(#nclip)">` + path(sample(2, 6, w).map(([x, y]) => [ax.X(x), ax.Y(y)]), C.a, 2.5) + path(sample(2, 6, Lm => Lm * 1000 / 300, 2).map(([x, y]) => [ax.X(x), ax.Y(y)]), C.b, 2, '6 4') + '</g>';
+    s += txt(ax.X(6) - 4, ax.Y(6000 / 300) - 8, 'L/300', { a: 'end', c: C.b, s: 11 });
+    if (Lmax >= 2 && Lmax <= 6) s += `<circle cx="${ax.X(Lmax)}" cy="${ax.Y(Lmax * 1000 / 300)}" r="4" fill="${C.b}"/>`;
+    if (wL <= ym.max) s += `<circle cx="${ax.X(L)}" cy="${ax.Y(wL)}" r="5" fill="${C.a}"/>`;
+    $('n-svg').innerHTML = s;
+    $('n-calc').textContent =
+`I       = b·h³/12 = ${b}·${h}³/12 = ${n(I, 0)} mm⁴
+w       = 5·q·L⁴ / (384·E·I) = 5·${n(q, 2)}·${n(L * 1000, 0)}⁴ / (384·11 000·${n(I, 0)}) = ${n(wL, 2)} mm
+krav    = L/300 = ${n(L * 1000, 0)}/300 = ${n(lim, 2)} mm   → utnyttelse ${n(wL / lim * 100, 0)} %
+L_maks  = ∛(384·E·I / (1 500·q)) = ∛(384·11 000·${n(I, 0)} / (1 500·${n(q, 2)})) = ${n(Lmax, 2)} m   (der w = L/300)`;
+  }
+  bind(['n-l', 'n-q', 'n-s'], nedb);
+
+  // ---------- 5. Vandrende punktlast ----------
+  let pAuto = !reduce, pDir = 1;
+  function punkt() {
+    const P = +$('p-p').value, L = +$('p-l').value, r = +$('p-a').value, a = r * L;
+    $('p-p-o').textContent = n(P, 1) + ' kN'; $('p-l-o').textContent = n(L, 1) + ' m'; $('p-a-o').textContent = n(a, 2) + ' m';
+    const RA = P * (L - a) / L, RB = P * a / L, M = RA * a, Mmax = P * L / 4;
+    const x0 = 70, x1 = 570, X = m => x0 + m / L * (x1 - x0), by = 92;
+    let s = `<rect x="${x0}" y="${by - 5}" width="${x1 - x0}" height="10" fill="${C.wood}"/>` + support(x0, by + 5) + support(x1, by + 5);
+    s += arrow(X(a), 20, X(a), by - 7, C.a, 3) + txt(X(a) + 8, 32, 'P = ' + n(P, 1) + ' kN', { c: C.a, s: 12 });
+    s += arrow(x0, 150, x0, by + 26, C.b, 2.5) + txt(x0 - 6, 150, n(RA, 2), { a: 'end', c: C.b }) + arrow(x1, 150, x1, by + 26, C.b, 2.5) + txt(x1 + 6, 150, n(RB, 2), { c: C.b });
+    // V
+    const yV = 215, sv = 38 / P;
+    s += txt(10, yV - 44, 'V (kN)', { s: 11 }) + line(x0, yV, x1, yV, C.mu);
+    s += `<rect x="${x0}" y="${yV - RA * sv}" width="${X(a) - x0}" height="${RA * sv}" fill="${C.b}" fill-opacity="0.35" stroke="${C.b}"/>`;
+    s += `<rect x="${X(a)}" y="${yV}" width="${x1 - X(a)}" height="${RB * sv}" fill="${C.b}" fill-opacity="0.35" stroke="${C.b}"/>`;
+    s += txt(x0 + 6, yV - RA * sv - 6, '+' + n(RA, 2), { c: C.fg, s: 11 }) + txt(x1 - 6, yV + RB * sv + 14, '−' + n(RB, 2), { c: C.fg, s: 11, a: 'end' });
+    // M
+    const yM = 285, sm = 80 / Mmax;
+    s += txt(10, yM - 12, 'M (kNm)', { s: 11 }) + line(x0, yM, x1, yM, C.mu);
+    s += path(sample(0, L, x => P * x * (L - x) / L, 80).map(([x, m]) => [X(x), yM + m * sm]), C.mu, 1.2, '4 4');
+    s += path([[x0, yM], [X(a), yM + M * sm], [x1, yM]], C.a, 2, null, C.a, 0.3);
+    s += txt(X(a), yM + M * sm + 18, n(M, 2), { a: 'middle', c: C.fg, s: 12 });
+    s += txt(x1, 392, 'stiplet: største moment for hver lastposisjon (maks P·L/4 midt på)', { a: 'end', s: 10 });
+    $('p-svg').innerHTML = s;
+    $('p-calc').textContent =
+`a        = ${n(a, 2)} m
+R_A      = P·(L − a)/L = ${n(P, 1)}·(${n(L, 2)} − ${n(a, 2)})/${n(L, 2)} = ${n(RA, 2)} kN
+R_B      = P·a/L = ${n(P, 1)}·${n(a, 2)}/${n(L, 2)} = ${n(RB, 2)} kN        kontroll R_A + R_B = ${n(RA + RB, 2)} = P ✓
+M        = R_A·a = ${n(RA, 2)}·${n(a, 2)} = ${n(M, 2)} kNm
+M_maks   = P·L/4 = ${n(P, 1)}·${n(L, 2)}/4 = ${n(Mmax, 2)} kNm   (lasten midt på)`;
+  }
+  bind(['p-p', 'p-l'], punkt);
+  $('p-a').addEventListener('input', () => { setPAuto(false); punkt(); });
+  function setPAuto(v) { pAuto = v; $('p-auto').textContent = v ? 'Stopp lasten' : 'Kjør lasten'; }
+  $('p-auto').addEventListener('click', () => setPAuto(!pAuto));
+
+  // ---------- 6. Skråstag ----------
+  function stag() {
+    const b = +$('s-b').value, H = +$('s-h').value, h = 2.4;
+    $('s-b-o').textContent = n(b, 1) + ' m'; $('s-h-o').textContent = n(H, 1) + ' kN';
+    const al = Math.atan(h / b), N = H / Math.cos(al), T = H * h / b;
+    const k = 62, x0 = 70, yb = 290, x1 = x0 + b * k, yt = yb - h * k;
+    let s = '';
+    s += `<rect x="${x0}" y="${yt}" width="${x1 - x0}" height="${yb - yt}" fill="none" stroke="${C.wood}" stroke-width="6"/>`;
+    s += line(x0, yt, x1, yb, C.a, 5);
+    s += arrow(x0 - 64, yt, x0 - 6, yt, C.fg, 3) + txt(x0 - 64, yt - 10, 'H = ' + n(H, 1), { c: C.fg });
+    s += arrow(x0, yb + 6, x0, yb + 34, C.r, 2.5) + txt(x0 + 6, yb + 32, 'T = ' + n(T, 1), { c: C.r });
+    s += arrow(x1, yb + 36, x1, yb + 8, C.b, 2.5) + txt(x1 + 6, yb + 32, n(T, 1), { c: C.b });
+    s += `<path d="M ${x1 - 34} ${yb} A 34 34 0 0 1 ${x1 - 34 * Math.cos(al)} ${yb - 34 * Math.sin(al)}" fill="none" stroke="${C.a}"/>`;
+    s += txt(x1 - 44 * Math.cos(al / 2) - 8, yb - 44 * Math.sin(al / 2) + 4, 'α', { c: C.a, s: 14 });
+    s += txt(x1 + 12, (yt + yb) / 2, 'N = ' + n(N, 1), { c: C.a, s: 13 });
+    s += txt(x0 - 10, (yt + yb) / 2, '2,4 m', { a: 'end', s: 11 }) + txt((x0 + x1) / 2, yt - 10, 'b = ' + n(b, 1) + ' m', { a: 'middle', s: 11 });
+    const ax = axes({ x: 410, y: 30, w: 205, h: 240, xr: [10, 80], yr: [0, 6], xt: [10, 30, 45, 60, 80], yt: [0, 1, 2, 3, 4, 5, 6], fx: v => v + '°', xl: 'α', yl: 'N / H' });
+    s += ax.s + path(sample(10, 80, a => 1 / Math.cos(rad(a))).map(([x, y]) => [ax.X(x), ax.Y(y)]), C.a, 2.5);
+    s += `<circle cx="${ax.X(deg(al))}" cy="${ax.Y(N / H)}" r="5" fill="${C.a}"/>` + txt(ax.X(deg(al)) - 8, ax.Y(N / H) - 10, n(N / H, 2) + '·H', { a: 'end', c: C.fg });
+    $('s-svg').innerHTML = s;
+    $('s-calc').textContent =
+`α        = arctan(h/b) = arctan(2,40 / ${n(b, 2)}) = ${n(deg(al), 1)}°
+N        = H / cos α = ${n(H, 2)} / ${n(Math.cos(al), 3)} = ${n(N, 2)} kN    (kraft i staget)
+T        = H · h / b = ${n(H, 2)} · 2,40 / ${n(b, 2)} = ${n(T, 2)} kN      (forankring i hjørnet)
+Kontroll: N · sin α = ${n(N, 2)} · ${n(Math.sin(al), 3)} = ${n(N * Math.sin(al), 2)} kN = T ✓`;
+  }
+  bind(['s-b', 's-h'], stag);
+
+  // ---------- 7. Mohrs sirkel ----------
+  let mAuto = !reduce, mTheta = 30;
+  function mohr() {
+    const sx = +$('m-sx').value, sy = +$('m-sy').value, tx = +$('m-t').value, th = +$('m-th').value;
+    $('m-sx-o').textContent = n(sx, 1); $('m-sy-o').textContent = n(sy, 1); $('m-t-o').textContent = n(tx, 1); $('m-th-o').textContent = Math.round(th) + '°';
+    const a = (sx - sy) / 2, Cc = (sx + sy) / 2, R = Math.hypot(a, tx), t2 = 2 * rad(th);
+    const st = Cc + a * Math.cos(t2) + tx * Math.sin(t2), tt = -a * Math.sin(t2) + tx * Math.cos(t2), st90 = Cc - a * Math.cos(t2) - tx * Math.sin(t2);
+    const s1 = Cc + R, s2 = Cc - R, thp = deg(0.5 * Math.atan2(2 * tx, sx - sy));
+    // Element
+    const ex = 150, ey = 160, hs = 45, kE = 42 / Math.max(Math.abs(s1), Math.abs(s2), 0.5);
+    let el = `<rect x="${ex - hs}" y="${ey - hs}" width="${2 * hs}" height="${2 * hs}" fill="${C.woodFill}" stroke="${C.fg}" stroke-width="1.5"/>`;
+    const sig = (val, dir) => {    // dir 1: høyre/venstre flate, 2: topp/bunn
+      const L = Math.abs(val) * kE, out = val >= 0;
+      if (L < 2) return '';
+      if (dir === 1) return out ? arrow(ex + hs + 4, ey, ex + hs + 4 + L, ey, C.a) + arrow(ex - hs - 4, ey, ex - hs - 4 - L, ey, C.a)
+                                : arrow(ex + hs + 4 + L, ey, ex + hs + 4, ey, C.a) + arrow(ex - hs - 4 - L, ey, ex - hs - 4, ey, C.a);
+      return out ? arrow(ex, ey - hs - 4, ex, ey - hs - 4 - L, C.a) + arrow(ex, ey + hs + 4, ex, ey + hs + 4 + L, C.a)
+                 : arrow(ex, ey - hs - 4 - L, ex, ey - hs - 4, C.a) + arrow(ex, ey + hs + 4 + L, ex, ey + hs + 4, C.a);
+    };
+    el += sig(st, 1) + sig(st90, 2);
+    const Lt = Math.abs(tt) / Math.max(R, 0.5) * 70, sgn = tt >= 0 ? 1 : -1;
+    if (Lt > 6) {
+      el += arrow(ex + hs - 8, ey + sgn * Lt / 2, ex + hs - 8, ey - sgn * Lt / 2, C.b);
+      el += arrow(ex - hs + 8, ey - sgn * Lt / 2, ex - hs + 8, ey + sgn * Lt / 2, C.b);
+      el += arrow(ex - sgn * Lt / 2, ey - hs + 8, ex + sgn * Lt / 2, ey - hs + 8, C.b);
+      el += arrow(ex + sgn * Lt / 2, ey + hs - 8, ex - sgn * Lt / 2, ey + hs - 8, C.b);
+    }
+    let s = line(ex - 110, ey, ex + 110, ey, C.ln, 1, '4 4') + line(ex, ey - 110, ex, ey + 110, C.ln, 1, '4 4');
+    s += `<g transform="rotate(${-th} ${ex} ${ey})">${el}</g>`;
+    s += txt(ex, 300, 'θ = ' + Math.round(th) + '°   σ (gul), τ (blå)', { a: 'middle', s: 11 });
+    // Mohr
+    const lo = Math.min(0, s2), hi = Math.max(0, s1), span = Math.max(hi - lo, 1e-6);
+    const k = Math.min(250 / span, 120 / Math.max(R, 1e-6)), mid = (lo + hi) / 2;
+    const X = v => 465 + (v - mid) * k, Y = v => 160 - v * k;
+    s += line(320, Y(0), 615, Y(0), C.mu) + line(X(0), 25, X(0), 295, C.mu) + txt(612, Y(0) - 6, 'σ', { a: 'end', s: 12 }) + txt(X(0) + 6, 36, 'τ', { s: 12 });
+    s += `<circle cx="${X(Cc)}" cy="${Y(0)}" r="${R * k}" fill="none" stroke="${C.fg}" stroke-width="1.5"/>`;
+    s += line(X(sx), Y(tx), X(sy), Y(-tx), C.mu, 1, '4 4') + txt(X(sx) + 6, Y(tx) - 6, 'x', { s: 11 }) + txt(X(sy) + 6, Y(-tx) + 14, 'y', { s: 11 });
+    s += line(X(st), Y(tt), X(st90), Y(-tt), C.a, 1.5);
+    s += `<circle cx="${X(st)}" cy="${Y(tt)}" r="5" fill="${C.a}"/><circle cx="${X(st90)}" cy="${Y(-tt)}" r="4" fill="none" stroke="${C.a}" stroke-width="1.5"/>`;
+    s += [[s1, 'σ₁'], [s2, 'σ₂']].map(([v, l]) => `<circle cx="${X(v)}" cy="${Y(0)}" r="3.5" fill="${C.g}"/>` + txt(X(v), Y(0) + 18, l + ' ' + n(v, 2), { a: 'middle', c: C.g, s: 11 })).join('');
+    s += X(st) > 520 ? txt(X(st) - 10, Y(tt) + (tt >= 0 ? -10 : 18), '(σθ, τθ)', { c: C.a, s: 11, a: 'end' }) : txt(X(st) + 8, Y(tt) - 8, '(σθ, τθ)', { c: C.a, s: 11 });
+    $('m-svg').innerHTML = s;
+    $('m-calc').textContent =
+`C      = (σx + σy)/2 = (${n(sx, 1)} + ${n(sy, 1)})/2 = ${n(Cc, 2)} MPa
+R      = √(((σx − σy)/2)² + τ²) = √(${n(a, 2)}² + ${n(tx, 2)}²) = ${n(R, 2)} MPa
+σ₁, σ₂ = C ± R = ${n(s1, 2)} / ${n(s2, 2)} MPa        hovedretning θp = ½·atan2(2τ, σx − σy) = ${n(thp, 1)}°
+θ = ${Math.round(th)}°:  σθ = C + a·cos2θ + τ·sin2θ = ${n(Cc, 2)} + ${n(a, 2)}·${n(Math.cos(t2), 3)} + ${n(tx, 2)}·${n(Math.sin(t2), 3)} = ${n(st, 2)} MPa
+         τθ = −a·sin2θ + τ·cos2θ = ${n(-a, 2)}·${n(Math.sin(t2), 3)} + ${n(tx, 2)}·${n(Math.cos(t2), 3)} = ${n(tt, 2)} MPa`;
+  }
+  bind(['m-sx', 'm-sy', 'm-t'], mohr);
+  $('m-th').addEventListener('input', () => { setMAuto(false); mTheta = +$('m-th').value; mohr(); });
+  function setMAuto(v) { mAuto = v; $('m-auto').textContent = v ? 'Stopp rotasjon' : 'Roter'; }
+  $('m-auto').addEventListener('click', () => setMAuto(!mAuto));
+
+  // ---------- Skjærspenning i bolt ----------
+  const BOLT = { M8: [8, 36.6], M10: [10, 58], M12: [12, 84.3], M16: [16, 157], M20: [20, 245], M24: [24, 353] };
+  const BCL = { '4.6': [400, 0.6], '5.6': [500, 0.6], '8.8': [800, 0.6], '10.9': [1000, 0.5] };
+  function bolt() {
+    const F = +$('v-f').value, [d, As] = BOLT[$('v-d').value], [fub, avT] = BCL[$('v-c').value], ns = +$('v-n').value, thr = $('v-t').checked;
+    $('v-f-o').textContent = n(F, 0) + ' kN';
+    const Ag = Math.PI * d * d / 4, A = thr ? As : Ag, av = thr ? avT : 0.6;
+    const tau = F * 1000 / (ns * A), tmax = 4 / 3 * tau, FvRd = av * fub * A / 1.25 / 1000, util = F / (ns * FvRd);
+    const wb = 8 + d * 0.9, bx = 165;
+    let s = '';
+    const plate = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#2c343a" stroke="${C.mu}" stroke-width="1.2"/>`;
+    const shear = y => line(bx - wb / 2 - 14, y, bx + wb / 2 + 14, y, C.r, 2, '5 3') + txt(bx + wb / 2 + 18, y + 4, 'skjærplan', { c: C.r, s: 11 });
+    if (ns === 1) {
+      s += plate(30, 120, 200, 32) + plate(100, 152, 200, 32);
+      s += `<rect x="${bx - wb / 2}" y="104" width="${wb}" height="96" fill="${C.wood}" opacity="0.9"/>`;
+      s += `<rect x="${bx - wb}" y="96" width="${2 * wb}" height="10" fill="${C.fg}"/><rect x="${bx - wb}" y="198" width="${2 * wb}" height="10" fill="${C.fg}"/>`;
+      s += shear(152);
+      s += arrow(30, 136, 0, 136, C.a, 3) + txt(4, 126, 'F', { c: C.a, s: 13 });
+      s += arrow(300, 168, 330, 168, C.a, 3) + txt(318, 158, 'F', { c: C.a, s: 13 });
+    } else {
+      s += plate(30, 100, 200, 26) + plate(30, 174, 200, 26) + plate(100, 126, 200, 48);
+      s += `<rect x="${bx - wb / 2}" y="86" width="${wb}" height="128" fill="${C.wood}" opacity="0.9"/>`;
+      s += `<rect x="${bx - wb}" y="78" width="${2 * wb}" height="10" fill="${C.fg}"/><rect x="${bx - wb}" y="212" width="${2 * wb}" height="10" fill="${C.fg}"/>`;
+      s += shear(126) + shear(174);
+      s += arrow(30, 113, 0, 113, C.a, 2.5) + txt(4, 104, 'F/2', { c: C.a, s: 12 }) + arrow(30, 187, 0, 187, C.a, 2.5) + txt(4, 207, 'F/2', { c: C.a, s: 12 });
+      s += arrow(300, 150, 330, 150, C.a, 3) + txt(318, 140, 'F', { c: C.a, s: 13 });
+    }
+    s += txt(165, 260, `${$('v-d').value}, ${ns === 1 ? 'enkelt' : 'dobbelt'} snitt`, { a: 'middle', s: 12, c: C.fg });
+    // Tverrsnitt med skjærspenningsfordeling
+    const cx = 420, cy = 150, r = 58, over = util > 1;
+    s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${over ? C.r : C.a}" fill-opacity="${0.15 + 0.5 * Math.min(util, 1)}" stroke="${C.fg}" stroke-width="1.5"/>`;
+    s += txt(cx, cy + r + 20, 'tverrsnitt i skjærplanet', { a: 'middle', s: 11 });
+    const x0 = 510, W = 80;
+    s += line(x0, cy - r, x0, cy + r, C.mu) + line(cx, cy - r, x0, cy - r, C.ln, 1, '3 3') + line(cx, cy + r, x0, cy + r, C.ln, 1, '3 3');
+    s += path([[x0, cy - r], ...sample(-1, 1, y => y, 60).map(([y]) => [x0 + W * (1 - y * y), cy + y * r]), [x0, cy + r]], C.b, 1.8, null, C.b, 0.3);
+    s += line(x0 + W * 0.75, cy - r, x0 + W * 0.75, cy + r, C.fg, 1, '4 3');
+    s += txt(x0 + W + 6, cy + 4, 'τ_maks ' + n(tmax, 0), { c: C.b, s: 11 }) + txt(x0 + W * 0.75, cy - r - 8, 'τ snitt ' + n(tau, 0), { a: 'middle', c: C.fg, s: 11 });
+    // Utnyttelse
+    const ux = 360, uw = 260;
+    s += `<rect x="${ux}" y="262" width="${uw}" height="14" fill="${C.ln}"/><rect x="${ux}" y="262" width="${uw * Math.min(util, 1.25) / 1.25}" height="14" fill="${over ? C.r : C.a}"/>`;
+    s += line(ux + uw / 1.25, 256, ux + uw / 1.25, 282, C.fg, 1.5) + txt(ux, 298, `Utnyttelse ${n(util * 100, 0)} % av n·F_v,Rd`, { c: over ? C.r : C.fg, s: 12 });
+    $('v-svg').innerHTML = s;
+    $('v-calc').textContent =
+`A        = ${thr ? `A_s (gjenget del, tabell) = ${n(As, 1)}` : `π·d²/4 = π·${d}²/4 = ${n(Ag, 1)}`} mm²
+τ        = F / (n·A) = ${n(F * 1000, 0)} / (${ns}·${n(A, 1)}) = ${n(tau, 0)} MPa   (gjennomsnitt)
+τ_maks   ≈ 4/3·τ = ${n(tmax, 0)} MPa   (sirkulært tverrsnitt, elastisk fordeling)
+F_v,Rd   = α_v·f_ub·A / γ_M2 = ${n(av, 1)}·${fub}·${n(A, 1)} / 1,25 = ${n(FvRd, 1)} kN per snitt
+Kapasitet = n·F_v,Rd = ${ns}·${n(FvRd, 1)} = ${n(ns * FvRd, 1)} kN   → utnyttelse ${n(util * 100, 0)} %${over ? '   IKKE OK' : ''}`;
+  }
+  bind(['v-f', 'v-d', 'v-c', 'v-n', 'v-t'], bolt);
+  $('v-t').addEventListener('change', bolt);
+
+  // ---------- Steinertillegget ----------
+  const FL = { '48x73': [73, 48], '48x98': [98, 48], '48x148': [148, 48] };
+  function steiner() {
+    const h = +$('i-h').value, [bf, tf] = FL[$('i-f').value], tw = +$('i-w').value;
+    $('i-h-o').textContent = h + ' mm';
+    const Ifn = hh => { const hw = hh - 2 * tf, d = hh / 2 - tf / 2; return { hw, d, Icf: bf * tf ** 3 / 12, Af: bf * tf, Ad2: bf * tf * d * d, Iw: tw * hw ** 3 / 12 }; };
+    const { hw, d, Icf, Af, Ad2, Iw } = Ifn(h);
+    const Itot = 2 * (Icf + Ad2) + Iw, Ic = 2 * Icf + Iw, W = Itot / (h / 2);
+    const k = 300 / 450, cx = 140, cy = 180, H = h * k;
+    let s = '';
+    s += `<rect x="${cx - bf * k / 2}" y="${cy - H / 2}" width="${bf * k}" height="${tf * k}" fill="${C.woodFill}" stroke="${C.wood}" stroke-width="1.5"/>`;
+    s += `<rect x="${cx - bf * k / 2}" y="${cy + H / 2 - tf * k}" width="${bf * k}" height="${tf * k}" fill="${C.woodFill}" stroke="${C.wood}" stroke-width="1.5"/>`;
+    s += `<rect x="${cx - tw * k / 2}" y="${cy - H / 2 + tf * k}" width="${tw * k}" height="${hw * k}" fill="#33404a" stroke="${C.mu}" stroke-width="1"/>`;
+    s += line(40, cy, 250, cy, C.fg, 1.2, '6 4') + txt(40, cy - 6, 'nøytralakse', { s: 11 });
+    [-1, 1].forEach(sg => { s += line(cx - bf * k / 2 - 10, cy + sg * d * k, cx + bf * k / 2 + 10, cy + sg * d * k, C.a, 1, '3 3'); });
+    const ax = cx + bf * k / 2 + 26;
+    s += arrow(ax, cy, ax, cy - d * k + 2, C.a, 1.6) + txt(ax + 6, cy - d * k / 2 + 4, 'd = ' + n(d, 0), { c: C.a, s: 12 });
+    s += line(cx - bf * k / 2 - 30, cy - H / 2, cx - bf * k / 2 - 30, cy + H / 2, C.mu) + txt(cx - bf * k / 2 - 36, cy + 4, 'h', { a: 'end', c: C.fg, s: 13 });
+    // Stablet stolpe
+    const bx = 320, bw = 295, parts = [[2 * Ad2, C.a, 'A·d² (flenser)'], [2 * Icf, C.b, 'I_c flenser'], [Iw, C.g, 'steg']];
+    let x = bx;
+    s += txt(bx, 34, 'Fordeling av I', { c: C.fg, s: 12 });
+    parts.forEach(([v, col, lab], i) => {
+      const w = bw * v / Itot;
+      s += `<rect x="${x}" y="44" width="${w}" height="22" fill="${col}" fill-opacity="0.8"/>`;
+      const lx = bx + [0, 125, 215][i]; s += `<rect x="${lx}" y="78" width="10" height="10" fill="${col}"/>` + txt(lx + 14, 87, `${lab} ${n(v / Itot * 100, 0)} %`, { s: 10 });
+      x += w;
+    });
+    // Kurve I mot h
+    const hs = [200, 450], Imax = (() => { const o = Ifn(450); return 2 * (o.Icf + o.Ad2) + o.Iw; })() / 1e6;
+    const ym = nice(Imax);
+    const a2 = axes({ x: 360, y: 120, w: 255, h: 190, xr: hs, yr: [0, ym.max], xt: [200, 250, 300, 350, 400, 450], yt: ticks(0, ym.max, ym.step * (ym.max / ym.step > 5 ? 2 : 1)), xl: 'h (mm)', yl: 'I (10⁶ mm⁴)' });
+    s += a2.s;
+    s += path(sample(200, 450, hh => { const o = Ifn(hh); return (2 * (o.Icf + o.Ad2) + o.Iw) / 1e6; }).map(([xx, y]) => [a2.X(xx), a2.Y(y)]), C.a, 2.5);
+    s += path(sample(200, 450, hh => { const o = Ifn(hh); return (2 * o.Icf + o.Iw) / 1e6; }).map(([xx, y]) => [a2.X(xx), a2.Y(y)]), C.mu, 1.5, '5 4');
+    s += txt(a2.X(450) - 4, a2.Y(Ic / 1e6 * 0 + (2 * Ifn(450).Icf + Ifn(450).Iw) / 1e6) - 6, 'uten A·d²', { a: 'end', s: 10 });
+    s += `<circle cx="${a2.X(h)}" cy="${a2.Y(Itot / 1e6)}" r="5" fill="${C.a}"/>`;
+    $('i-svg').innerHTML = s;
+    $('i-calc').textContent =
+`Flens (×2): A = ${bf}·${tf} = ${n(Af, 0)} mm²     I_c = ${bf}·${tf}³/12 = ${n(Icf, 0)} mm⁴
+            d = h/2 − t_f/2 = ${h}/2 − ${tf}/2 = ${n(d, 0)} mm     A·d² = ${n(Af, 0)}·${n(d, 0)}² = ${n(Ad2, 0)} mm⁴
+Steg:       h_w = ${h} − 2·${tf} = ${hw} mm     I = ${tw}·${hw}³/12 = ${n(Iw, 0)} mm⁴   (d = 0)
+I_tot = 2·(I_c + A·d²) + I_steg = 2·(${n(Icf, 0)} + ${n(Ad2, 0)}) + ${n(Iw, 0)} = ${n(Itot, 0)} mm⁴
+Uten A·d²:  ${n(Ic, 0)} mm⁴   → Steiner-leddet står for ${n(2 * Ad2 / Itot * 100, 0)} % av I_tot
+W = I/(h/2) = ${n(Itot, 0)} / ${n(h / 2, 0)} = ${n(W, 0)} mm³   (til sammenligning: 48×198 høykant har W = 313 632 mm³)`;
+  }
+  bind(['i-h', 'i-f', 'i-w'], steiner);
+
+  // ---------- Superposisjon ----------
+  let uAuto = !reduce, uT = 0;
+  function superpos() {
+    const q = +$('u-q').value, P = +$('u-p').value, a = +$('u-a').value * +$('u-l').value, L = +$('u-l').value, m = +$('u-m').value;
+    $('u-q-o').textContent = n(q, 1) + ' kN/m'; $('u-p-o').textContent = n(P, 1) + ' kN'; $('u-a-o').textContent = n(a, 2) + ' m'; $('u-l-o').textContent = n(L, 1) + ' m';
+    $('u-m-o').textContent = m < 0.02 ? 'hver for seg' : m > 0.98 ? 'summert' : 'legges sammen';
+    const Mq = x => q * x * (L - x) / 2, Mp = x => x <= a ? P * (L - a) * x / L : P * a * (L - x) / L, Ms = x => Mq(x) + Mp(x);
+    let xm = a, Mm = Ms(a);
+    for (let i = 0; i <= 400; i++) { const x = L * i / 400, v = Ms(x); if (v > Mm) { Mm = v; xm = x; } }
+    const x0 = 120, x1 = 590, X = x => x0 + x / L * (x1 - x0), sc = 95 / Math.max(Mm, 1e-6);
+    const y1 = 105, y2 = 225, y3 = 345, by = 55;
+    const xs = sample(0, L, x => x, 160).map(([x]) => x).concat([a]).sort((p, r) => p - r);
+    let s = '';
+    if (q > 0) { for (let i = 0; i <= 12; i++) { const x = x0 + (x1 - x0) * i / 12; s += arrow(x, by - 28, x, by - 7, C.b, 1.2); } s += line(x0, by - 28, x1, by - 28, C.b, 1.2) + txt(x1 + 8, by - 24, 'q', { c: C.b, s: 13 }); }
+    s += `<rect x="${x0}" y="${by - 4}" width="${x1 - x0}" height="8" fill="${C.wood}"/>` + support(x0, by + 4) + support(x1, by + 4);
+    if (P > 0) s += arrow(X(a), by - 50, X(a), by - 6, C.a, 3) + txt(X(a) + 7, by - 40, 'P', { c: C.a, s: 13 });
+    s += txt(12, y1 + 4, 'q alene', { c: C.b, s: 12 }) + txt(12, y2 + 4, 'P alene', { c: C.a, s: 12 }) + txt(12, y3 + 4, 'Sum q + P', { c: C.fg, s: 12, w: 600 });
+    [y1, y2, y3].forEach(y => { s += line(x0, y, x1, y, C.mu); });
+    const fill = (fn, base, col) => path([[x0, base], ...xs.map(x => [X(x), base + fn(x) * sc]), [x1, base]], col, 1.5, null, col, 0.3);
+    s += fill(Mq, y1, C.b) + fill(Mq, y3, C.b);
+    s += path([[x0, y2], [X(a), y2 + Mp(a) * sc], [x1, y2]], C.a, 1, '4 4');
+    const low = x => (1 - m) * y2 + m * (y3 + Mq(x) * sc);
+    s += path([...xs.map(x => [X(x), low(x)]), ...xs.slice().reverse().map(x => [X(x), low(x) + Mp(x) * sc])], C.a, 1.5, null, C.a, 0.4);
+    s += txt(X(L / 2), y1 + Mq(L / 2) * sc + 16, n(q * L * L / 8, 2), { a: 'middle', c: C.b, s: 11 });
+    if (m < 0.05) s += txt(X(a), y2 + Mp(a) * sc + 16, n(Mp(a), 2), { a: 'middle', c: C.a, s: 11 });
+    if (m > 0.95) {
+      s += path(xs.map(x => [X(x), y3 + Ms(x) * sc]), C.fg, 2.2);
+      s += `<circle cx="${X(xm)}" cy="${y3 + Mm * sc}" r="4.5" fill="${C.fg}"/>` + txt(X(xm), y3 + Mm * sc + 20, 'M_maks = ' + n(Mm, 2) + ' kNm', { a: 'middle', c: C.fg, s: 12 });
+    }
+    s += txt(x1, 466, 'momenter i kNm, tegnet på strekksiden, samme skala', { a: 'end', s: 10 });
+    $('u-svg').innerHTML = s;
+    const Ra = q * L / 2 + P * (L - a) / L, Rb = q * L / 2 + P * a / L, sumMax = q * L * L / 8 + Mp(a);
+    $('u-calc').textContent =
+`Lasttilfelle 1 (q):  M_q(a) = q·a·(L−a)/2 = ${n(q, 1)}·${n(a, 2)}·${n(L - a, 2)}/2 = ${n(Mq(a), 2)} kNm
+Lasttilfelle 2 (P):  M_P(a) = P·a·(L−a)/L = ${n(P, 1)}·${n(a, 2)}·${n(L - a, 2)}/${n(L, 2)} = ${n(Mp(a), 2)} kNm
+Sum under P:         M(a) = ${n(Mq(a), 2)} + ${n(Mp(a), 2)} = ${n(Ms(a), 2)} kNm
+Reaksjoner:          R_A = q·L/2 + P·(L−a)/L = ${n(q * L / 2, 2)} + ${n(P * (L - a) / L, 2)} = ${n(Ra, 2)} kN
+                     R_B = q·L/2 + P·a/L = ${n(q * L / 2, 2)} + ${n(P * a / L, 2)} = ${n(Rb, 2)} kN    kontroll: ${n(Ra + Rb, 2)} = q·L + P ✓
+Største sum:         M_maks = ${n(Mm, 2)} kNm ved x = ${n(xm, 2)} m
+Sum av maksimaler:   q·L²/8 + M_P(a) = ${n(q * L * L / 8, 2)} + ${n(Mp(a), 2)} = ${n(sumMax, 2)} kNm   (konservativt, ${Mm > 1e-9 ? n(Math.max(0, sumMax / Mm * 100 - 100), 0) : '0'} % over)`;
+  }
+  bind(['u-q', 'u-p', 'u-a', 'u-l'], superpos);
+  $('u-m').addEventListener('input', () => { setUAuto(false); superpos(); });
+  function setUAuto(v) { uAuto = v; $('u-auto').textContent = v ? 'Stopp animasjon' : 'Spill animasjon'; }
+  $('u-auto').addEventListener('click', () => setUAuto(!uAuto));
+
+  // ---------- Knutepunktsmetoden ----------
+  let jStep = 0;
+  const J_STEPS = ['Steg 0: oversikt', 'Steg 1: reaksjoner', 'Steg 2: knutepunkt D', 'Steg 3: knutepunkt C', 'Steg 4: knutepunkt A (kontroll)'];
+  function knute() {
+    const L = +$('j-l').value, ad = +$('j-a').value, al = rad(ad), PC = +$('j-pc').value, PD = +$('j-pd').value;
+    $('j-l-o').textContent = n(L, 1) + ' m'; $('j-a-o').textContent = ad + '°'; $('j-pc-o').textContent = n(PC, 1) + ' kN'; $('j-pd-o').textContent = n(PD, 1) + ' kN';
+    $('j-step').textContent = J_STEPS[jStep];
+    const h = L / 2 * Math.tan(al), P = PC + PD, R = P / 2, sa = Math.sin(al), ca = Math.cos(al);
+    const N = { CD: PD, AC: -P / (2 * sa), BC: -P / (2 * sa), AD: P / (2 * Math.tan(al)), DB: P / (2 * Math.tan(al)) };
+    const solved = { CD: 2, AC: 3, BC: 3, AD: 4, DB: 4 };
+    const nodes = { A: [0, 0], B: [L, 0], D: [L / 2, 0], C: [L / 2, h] };
+    const k = Math.min(330 / L, 180 / Math.max(h, 0.01)), ox = 55, oy = 285;
+    const S = p => [ox + p[0] * k, oy - p[1] * k];
+    const Nmax = Math.max(...Object.values(N).map(Math.abs), 1e-6);
+    const col = v => Math.abs(v) < 1e-9 ? C.mu : v > 0 ? C.r : C.b;
+    let s = '';
+    const members = [['A', 'C', 'AC'], ['C', 'B', 'BC'], ['A', 'D', 'AD'], ['D', 'B', 'DB'], ['C', 'D', 'CD']];
+    members.forEach(([i, j, id]) => {
+      const [x1, y1] = S(nodes[i]), [x2, y2] = S(nodes[j]), done = jStep >= solved[id];
+      s += line(x1, y1, x2, y2, done ? col(N[id]) : '#4a535a', done ? 2 + 6 * Math.abs(N[id]) / Nmax : 3);
+      if (done) {
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, off = id === 'CD' ? [10, 0] : id === 'AD' || id === 'DB' ? [0, 18] : [id === 'AC' ? -14 : 14, -8];
+        s += txt(mx + off[0], my + off[1], (N[id] > 0 ? '+' : '') + n(N[id], 2), { a: id === 'AC' ? 'end' : id === 'CD' ? 'start' : 'middle', c: col(N[id]), s: 11 });
+      }
+    });
+    const cur = { 2: 'D', 3: 'C', 4: 'A' }[jStep];
+    Object.entries(nodes).forEach(([name, p]) => {
+      const [x, y] = S(p);
+      s += `<circle cx="${x}" cy="${y}" r="${name === cur ? 9 : 5}" fill="${name === cur ? C.bgdot || '#0f1214' : C.fg}" stroke="${name === cur ? C.a : C.fg}" stroke-width="${name === cur ? 3 : 1}"/>`;
+      s += txt(x + (name === 'A' ? -12 : name === 'B' ? 12 : 8), y + (name === 'C' ? -10 : 22), name, { a: name === 'A' ? 'end' : 'start', c: C.fg, s: 12, w: 600 });
+    });
+    const [Ax, Ay] = S(nodes.A), [Bx, By] = S(nodes.B), [Cx, Cy] = S(nodes.C), [Dx, Dy] = S(nodes.D);
+    s += support(Ax, Ay + 6) + `<polygon points="${Bx},${By + 6} ${Bx - 10},${By + 23} ${Bx + 10},${By + 23}" fill="none" stroke="${C.fg}" stroke-width="1.5"/>` + line(Bx - 12, By + 27, Bx + 12, By + 27, C.fg, 1.5);
+    if (PC > 0) s += arrow(Cx, Cy - 48, Cx, Cy - 11, C.a, 2.5) + txt(Cx + 8, Cy - 36, 'P_C = ' + n(PC, 1), { c: C.a, s: 11 });
+    if (PD > 0) s += arrow(Dx + 22, Dy + 2, Dx + 22, Dy + 36, C.a, 2.5) + txt(Dx + 28, Dy + 34, 'P_D = ' + n(PD, 1), { c: C.a, s: 11 });
+    if (jStep >= 1) { s += arrow(Ax - 22, Ay + 44, Ax - 22, Ay + 4, C.g, 2.5) + txt(Ax - 26, Ay + 44, n(R, 2), { a: 'end', c: C.g, s: 11 }) + arrow(Bx + 22, By + 44, Bx + 22, By + 4, C.g, 2.5) + txt(Bx + 26, By + 44, n(R, 2), { c: C.g, s: 11 }); }
+    // Kraftpolygon
+    const px = 430;
+    s += line(px - 14, 20, px - 14, 320, C.ln);
+    s += txt(px, 34, jStep === 0 ? 'Laster og opplegg' : jStep === 1 ? 'Hele fagverket: ΣF_y = 0' : 'Kraftpolygon i ' + cur, { c: C.fg, s: 12, w: 600 });
+    const on = (from, to, Nv) => { const [x1, y1] = nodes[from], [x2, y2] = nodes[to], L2 = Math.hypot(x2 - x1, y2 - y1); return [Nv * (x2 - x1) / L2, Nv * (y2 - y1) / L2]; };
+    let F = [];
+    if (jStep === 1) F = [[[0, R], C.g, 'R_A'], [[0, -PC], C.a, 'P_C'], [[0, -PD], C.a, 'P_D'], [[0, R], C.g, 'R_B']];
+    if (jStep === 2) F = [[[0, -PD], C.a, 'P_D'], [on('D', 'C', N.CD), col(N.CD), 'N_CD'], [on('D', 'A', N.AD), col(N.AD), 'N_AD'], [on('D', 'B', N.DB), col(N.DB), 'N_DB']];
+    if (jStep === 3) F = [[[0, -PC], C.a, 'P_C'], [on('C', 'D', N.CD), col(N.CD), 'N_CD'], [on('C', 'A', N.AC), col(N.AC), 'N_AC'], [on('C', 'B', N.BC), col(N.BC), 'N_BC']];
+    if (jStep === 4) F = [[[0, R], C.g, 'R_A'], [on('A', 'C', N.AC), col(N.AC), 'N_AC'], [on('A', 'D', N.AD), col(N.AD), 'N_AD']];
+    F = F.filter(f => Math.hypot(...f[0]) > 1e-9);
+    if (F.length) {
+      let pts = [[0, 0]]; F.forEach((f, i) => { const p = pts[i]; pts.push([p[0] + f[0][0] + (jStep === 1 ? 0.0001 : 0), p[1] + f[0][1]]); });
+      const xsP = pts.map(p => p[0]), ysP = pts.map(p => p[1]);
+      const span = Math.max(Math.max(...xsP) - Math.min(...xsP), Math.max(...ysP) - Math.min(...ysP), 1e-6);
+      const ks = 175 / span, cxp = (Math.max(...xsP) + Math.min(...xsP)) / 2, cyp = (Math.max(...ysP) + Math.min(...ysP)) / 2;
+      const T = (p, i) => [515 + (p[0] - cxp) * ks + (jStep === 1 ? (i % 2 ? 14 : -14) : 0), 180 - (p[1] - cyp) * ks];
+      F.forEach((f, i) => {
+        const [x1, y1] = T(pts[i], i), [x2, y2] = T(pts[i + 1], i);
+        s += arrow(x1, y1, x2, y2, f[1], 2.5);
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, vertical = Math.abs(x2 - x1) < 4;
+        s += txt(mx + (vertical ? 8 : 0), my + (vertical ? 4 : -8), f[2], { c: f[1], s: 11, a: vertical ? 'start' : 'middle' });
+      });
+      const end = pts[pts.length - 1], closed = Math.hypot(end[0], end[1]) < 1e-6 * Math.max(1, P);
+      s += txt(525, 312, closed ? 'Polygonet lukker seg: likevekt ✓' : 'Ikke lukket', { a: 'middle', c: closed ? C.g : C.r, s: 11 });
+    } else {
+      s += txt(px, 70, 'Trykk «Neste steg» for å løse', { s: 11 }) + txt(px, 88, 'fagverket knutepunkt for knutepunkt.', { s: 11 });
+    }
+    $('j-svg').innerHTML = s;
+    const lines = [
+`Geometri:  h = L/2·tan α = ${n(L / 2, 2)}·${n(Math.tan(al), 3)} = ${n(h, 2)} m.   Anta strekk (+) i alle staver.`,
+`Steg 1 – reaksjoner:  ΣM_A = 0 → R_B·L = (P_C + P_D)·L/2  →  R_A = R_B = (${n(PC, 1)} + ${n(PD, 1)})/2 = ${n(R, 2)} kN`,
+`Steg 2 – D:  ΣF_y = 0:  N_CD − P_D = 0  →  N_CD = ${n(N.CD, 2)} kN ${PD > 0 ? '(strekk)' : '(nullstav)'}     ΣF_x = 0:  N_DB = N_AD`,
+`Steg 3 – C:  ΣF_y = 0:  −2·N_AC·sin α − P_C − N_CD = 0  →  N_AC = −(${n(PC, 1)} + ${n(N.CD, 2)})/(2·${n(sa, 3)}) = ${n(N.AC, 2)} kN (trykk)`,
+`Steg 4 – A:  ΣF_x = 0:  N_AD + N_AC·cos α = 0  →  N_AD = ${n(-N.AC, 2)}·${n(ca, 3)} = ${n(N.AD, 2)} kN (strekk)
+            ΣF_y = 0:  R_A + N_AC·sin α = ${n(R, 2)} + (${n(N.AC, 2)})·${n(sa, 3)} = ${n(R + N.AC * sa, 2)} ✓`];
+    $('j-calc').textContent = lines.slice(0, jStep + 1).join('\n');
+  }
+  bind(['j-l', 'j-a', 'j-pc', 'j-pd'], knute);
+  $('j-next').addEventListener('click', () => { jStep = Math.min(4, jStep + 1); knute(); });
+  $('j-prev').addEventListener('click', () => { jStep = Math.max(0, jStep - 1); knute(); });
+
+  // ---------- Strekkraft i stag ----------
+  function strekk() {
+    const B = +$('g-b').value, ad = +$('g-a').value, al = rad(ad), q = +$('g-q').value;
+    $('g-b-o').textContent = n(B, 1) + ' m'; $('g-a-o').textContent = ad + '°'; $('g-q-o').textContent = n(q, 1) + ' kN/m';
+    const t = Math.tan(al), f = B / 2 * t, V = q * B / 2, H = q * B * B / (8 * f);
+    const k = 330 / B, ox = 40, oy = 270, X = x => ox + x * k, Y = y => oy - y * k;
+    const yr = x => (x <= B / 2 ? x : B - x) * t;
+    let s = '';
+    for (let i = 0; i <= 14; i++) { const x = B * i / 14; s += arrow(X(x), Y(yr(x)) - 34, X(x), Y(yr(x)) - 6, C.mu, 1.1); }
+    s += path(sample(0, B, x => yr(x), 2).map(([x, y]) => [X(x), Y(y) - 34]), C.mu, 1.1);
+    s += path([[X(0), Y(0)], [X(B / 2), Y(f)], [X(B), Y(0)]], C.wood, 8);
+    s += `<circle cx="${X(B / 2)}" cy="${Y(f)}" r="5" fill="#0f1214" stroke="${C.fg}" stroke-width="1.5"/>`;
+    s += line(X(0), Y(0), X(B), Y(0), C.r, 2 + Math.min(6, H / 4));
+    s += arrow(X(0) + 14, Y(0) - 12, X(0) + 64, Y(0) - 12, C.r, 2) + arrow(X(B) - 14, Y(0) - 12, X(B) - 64, Y(0) - 12, C.r, 2);
+    s += txt(X(B / 2), Y(0) + 22, 'S = H = ' + n(H, 2) + ' kN (strekk)', { a: 'middle', c: C.r, s: 12 });
+    s += support(X(0), Y(0) + 5) + `<polygon points="${X(B)},${Y(0) + 5} ${X(B) - 10},${Y(0) + 22} ${X(B) + 10},${Y(0) + 22}" fill="none" stroke="${C.fg}" stroke-width="1.5"/>` + line(X(B) - 12, Y(0) + 26, X(B) + 12, Y(0) + 26, C.fg, 1.5);
+    s += arrow(X(0), Y(0) + 62, X(0), Y(0) + 30, C.g, 2.5) + txt(X(0) + 6, Y(0) + 58, 'V = ' + n(V, 2), { c: C.g, s: 11 });
+    s += arrow(X(B), Y(0) + 62, X(B), Y(0) + 30, C.g, 2.5) + txt(X(B) - 6, Y(0) + 58, n(V, 2), { a: 'end', c: C.g, s: 11 });
+    s += line(X(B / 2), Y(f), X(B / 2), Y(0), C.ln, 1, '3 3') + txt(X(B / 2) + 6, Y(f / 2), 'f = ' + n(f, 2) + ' m', { s: 11 });
+    s += `<path d="M ${X(0) + 36} ${Y(0)} A 36 36 0 0 0 ${X(0) + 36 * Math.cos(al)} ${Y(0) - 36 * Math.sin(al)}" fill="none" stroke="${C.a}"/>` + txt(X(0) + 44, Y(0) - 8, 'α', { c: C.a, s: 13 });
+    const Hf = a => q * B / (4 * Math.tan(rad(a))), ym = nice(Hf(10));
+    const ax = axes({ x: 420, y: 30, w: 195, h: 240, xr: [10, 50], yr: [0, ym.max], xt: [10, 20, 30, 40, 50], yt: ticks(0, ym.max, ym.step * (ym.max / ym.step > 6 ? 2 : 1)), fx: v => v + '°', xl: 'α', yl: 'H (kN)' });
+    s += ax.s + path(sample(10, 50, Hf).map(([x, y]) => [ax.X(x), ax.Y(y)]), C.r, 2.5);
+    s += `<circle cx="${ax.X(ad)}" cy="${ax.Y(H)}" r="5" fill="${C.r}"/>` + txt(ax.X(ad) + 8, ax.Y(H) - 8, n(H, 2) + ' kN', { c: C.fg });
+    $('g-svg').innerHTML = s;
+    $('g-calc').textContent =
+`f  = B/2·tan α = ${n(B / 2, 2)}·${n(t, 3)} = ${n(f, 2)} m   (mønehøyde)
+V  = q·B/2 = ${n(q, 1)}·${n(B, 1)}/2 = ${n(V, 2)} kN   (per opplegg)
+ΣM om mønet, venstre halvdel:  V·B/2 − q·(B/2)²/2 − H·f = 0
+H  = q·B²/(8·f) = ${n(q, 1)}·${n(B * B, 2)}/(8·${n(f, 2)}) = ${n(H, 2)} kN   → strekkraft i staget
+Kontroll: H = V/(2·tan α) = ${n(V, 2)}/(2·${n(t, 3)}) = ${n(V / (2 * t), 2)} kN ✓`;
+  }
+  bind(['g-b', 'g-a', 'g-q'], strekk);
+
+  // ---------- Bjelketyper: fritt opplagt, utkrager, innspent i begge ender ----------
+  const EB = { '48x148': [48, 148], '48x198': [48, 198], '48x223': [48, 223], '73x223': [73, 223], '98x223': [98, 223] };
+  let eAuto = !reduce, eT = 0, eAnim = 1;
+  function bjelke() {
+    const cs = $('e-case').value, dir = $('e-dir').value === 'opp' ? -1 : 1, P = +$('e-p').value, L = +$('e-l').value, [b, h] = EB[$('e-s').value];
+    $('e-p-o').textContent = n(P, 1) + ' kN'; $('e-l-o').textContent = n(L, 1) + ' m';
+    const E = 11000, I = b * h ** 3 / 12, W = b * h * h / 6;
+    const ss = cs === 'ss', cl = cs === 'cl', ff = cs === 'ff';
+    // M > 0: strekk i underkant. Lasten P virker midt på (ss, ff) eller på tuppen (cl).
+    const Mx = x => dir * (ss ? (x <= L / 2 ? P * x / 2 : P * (L - x) / 2)
+                          : cl ? -P * (L - x)
+                          : (x <= L / 2 ? -P * L / 8 + P * x / 2 : -P * L / 8 + P * (L - x) / 2));
+    const Vx = x => dir * (cl ? P : x < L / 2 ? P / 2 : -P / 2);
+    const Mmax = ss ? P * L / 4 : cl ? P * L : P * L / 8, Vmax = cl ? P : P / 2;
+    const kw = ss ? 48 : cl ? 3 : 192;
+    const wmax = P * 1e3 * (L * 1e3) ** 3 / (kw * E * I), lim = cl ? L * 1e3 / 150 : L * 1e3 / 300;
+    const sig = Mmax * 1e6 / W;
+    const shape = z => ss ? (z <= 0.5 ? z * (3 - 4 * z * z) : (1 - z) * (3 - 4 * (1 - z) ** 2))
+                      : cl ? z * z * (3 - z) / 2
+                      : (z <= 0.5 ? 4 * z * z * (3 - 4 * z) : 4 * (1 - z) ** 2 * (3 - 4 * (1 - z)));
+    const a = eAnim, x0 = 95, x1 = 555, X = x => x0 + x / L * (x1 - x0), by = 125;
+    const Yb = x => by + 36 * a * dir * shape(x / L);
+    const xl = cl ? L : L / 2;
+    let s = '';
+
+    // Opplegg / innspenning
+    const wall = (x, side) => {
+      let w = `<rect x="${side < 0 ? x - 16 : x}" y="${by - 48}" width="16" height="96" fill="#252b30" stroke="${C.fg}" stroke-width="1.2"/>`;
+      for (let yy = by - 44; yy < by + 44; yy += 10) w += line(side < 0 ? x - 16 : x + 16, yy + 8, side < 0 ? x - 6 : x + 6, yy, C.mu, 0.8);
+      return w;
+    };
+    const roller = x => `<polygon points="${x},${by + 7} ${x - 10},${by + 24} ${x + 10},${by + 24}" fill="none" stroke="${C.fg}" stroke-width="1.5"/>` + line(x - 12, by + 28, x + 12, by + 28, C.fg, 1.5);
+    if (ss) s += support(X(0), by + 7) + roller(X(L));
+    else { s += wall(x0, -1); if (ff) s += wall(x1, 1); }
+
+    // Udeformert linje og deformert bjelke med strekk/trykk-farge
+    s += line(x0, by, x1, by, C.ln, 1, '4 4');
+    const N = 90, pts = Array.from({ length: N + 1 }, (_, i) => L * i / N);
+    s += `<path d="${pts.map((x, i) => (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + (Yb(x) - 7).toFixed(1)).join(' ')} ${pts.slice().reverse().map(x => 'L' + X(x).toFixed(1) + ' ' + (Yb(x) + 7).toFixed(1)).join(' ')} Z" fill="${C.woodFill}" stroke="none"/>`;
+    for (let i = 0; i < N; i++) {
+      const xa = pts[i], xb = pts[i + 1], m = Mx((xa + xb) / 2), it = Math.abs(m) / Math.max(Mmax, 1e-9) * a;
+      if (it < 0.02) continue;
+      const top = m < 0 ? C.r : C.b, bot = m < 0 ? C.b : C.r, op = (0.15 + 0.85 * it).toFixed(2);
+      s += `<line x1="${X(xa)}" y1="${Yb(xa) - 7}" x2="${X(xb)}" y2="${Yb(xb) - 7}" stroke="${top}" stroke-width="4" stroke-opacity="${op}"/>`;
+      s += `<line x1="${X(xa)}" y1="${Yb(xa) + 7}" x2="${X(xb)}" y2="${Yb(xb) + 7}" stroke="${bot}" stroke-width="4" stroke-opacity="${op}"/>`;
+    }
+
+    // Last
+    const lx = X(xl), ly = Yb(xl), al = 22 + 40 * Math.max(a, 0.15);
+    s += dir > 0 ? arrow(lx, ly - 9 - al, lx, ly - 9, C.a, 3.5) : arrow(lx, ly + 9 + al, lx, ly + 9, C.a, 3.5);
+    s += txt(lx + (cl ? -10 : 10), dir > 0 ? ly - al + 2 : ly + al + 6, 'P = ' + n(P, 1) + ' kN', { c: C.a, s: 12, a: cl ? 'end' : 'start' });
+    s += txt(lx + (cl ? -10 : 10), dir > 0 ? ly + 30 : ly - 22, 'w = ' + n(wmax * a, 1) + ' mm', { c: wmax > lim ? C.r : C.fg, s: 11, a: cl ? 'end' : 'start' });
+
+    // Reaksjoner (pil i retning motsatt av lasten)
+    const R = cl ? P : P / 2;
+    const reac = (x, side) => {
+      const xr = x + side * (ss ? 20 : 82);
+      return (dir > 0 ? arrow(xr, by + 62, xr, by + 12, C.g, 2.5) : arrow(xr, by - 62, xr, by - 12, C.g, 2.5))
+        + txt(xr + side * 6, dir > 0 ? by + 60 : by - 52, n(R, 2), { c: C.g, s: 11, a: side > 0 ? 'start' : 'end' });
+    };
+    if (ss) s += reac(X(0), -1) + reac(X(L), 1);
+    else if (cl) s += reac(x0, 1);
+    else s += reac(x0, 1) + reac(x1, -1);
+    // Innspenningsmoment som buepil
+    const marc = (xc, side, Mv) => {
+      const r = 30, pa = t => [xc + side * 6 + r * Math.cos(rad(t)), by - 12 - r * Math.sin(rad(t))];
+      const ccw = (side < 0) === (dir > 0);   // venstre ende: mot klokka ved last ned
+      const angs = sample(25, 155, t => t, 24).map(([t]) => t);
+      const seq = ccw ? angs : angs.slice().reverse();
+      let o = path(seq.map(pa), C.g, 2);
+      const e1 = pa(seq[seq.length - 2]), e2 = pa(seq[seq.length - 1]);
+      o += arrow(e1[0], e1[1], e2[0] + (e2[0] - e1[0]) * 1.5, e2[1] + (e2[1] - e1[1]) * 1.5, C.g, 2);
+      o += txt(xc + side * 6, by - 52, 'M = ' + n(Mv, 2), { a: 'middle', c: C.g, s: 11 });
+      return o;
+    };
+    if (cl) s += marc(x0 + 34, -1, P * L);
+    if (ff) s += marc(x0 + 34, -1, P * L / 8) + marc(x1 - 34, 1, P * L / 8);
+
+    // Forklaring
+    s += `<rect x="455" y="14" width="18" height="4" fill="${C.r}"/>` + txt(478, 20, 'strekk', { s: 11 }) + `<rect x="535" y="14" width="18" height="4" fill="${C.b}"/>` + txt(558, 20, 'trykk', { s: 11 });
+    s += txt(x0, 22, 'deformasjon forstørret', { s: 10 });
+
+    // V-diagram
+    const yV = 250, sv = 30 / Vmax;
+    s += txt(12, yV + 4, 'V (kN)', { s: 11 }) + line(x0, yV, x1, yV, C.mu);
+    const vpts = cl ? [[0, Vx(0)], [L, Vx(L)]] : [[0, Vx(0)], [L / 2, Vx(0)], [L / 2, Vx(L)], [L, Vx(L)]];
+    s += path([[X(0), yV], ...vpts.map(([x, v]) => [X(x), yV - v * sv]), [X(L), yV]], C.b, 1.5, null, C.b, 0.3);
+    s += txt(X(0) + 6, yV - Vx(0) * sv + (Vx(0) > 0 ? -6 : 14), (Vx(0) > 0 ? '+' : '') + n(Vx(0), 2), { c: C.fg, s: 11 });
+    if (!cl) s += txt(X(L) - 6, yV - Vx(L) * sv + (Vx(L) > 0 ? -6 : 14), (Vx(L) > 0 ? '+' : '') + n(Vx(L), 2), { c: C.fg, s: 11, a: 'end' });
+
+    // M-diagram på strekksiden
+    const yM = 398, sm = 70 / Math.max(Math.abs(Mx(0)), Math.abs(Mx(xl)), Mmax, 1e-9);
+    s += txt(12, yM + 4, 'M (kNm)', { s: 11 }) + line(x0, yM, x1, yM, C.mu);
+    const mpts = sample(0, L, x => x, 120).map(([x]) => [X(x), yM + Mx(x) * sm]);
+    s += path([[X(0), yM], ...mpts, [X(L), yM]], C.a, 1.8, null, C.a, 0.3);
+    const mlab = (x, v) => txt(X(x) + (x === 0 ? 6 : x === L ? -6 : 0), yM + v * sm + (v > 0 ? 16 : -8), (v > 0 ? '+' : '') + n(v, 2), { c: C.fg, s: 11, a: x === 0 ? 'start' : x === L ? 'end' : 'middle' });
+    if (ss) s += mlab(L / 2, Mx(L / 2));
+    if (cl) s += mlab(0, Mx(0));
+    if (ff) s += mlab(0, Mx(0)) + mlab(L / 2, Mx(L / 2)) + mlab(L, Mx(L));
+    s += txt(x1, 504, 'M tegnet på strekksiden: under aksen = strekk i underkant', { a: 'end', s: 10 });
+    $('e-svg').innerHTML = s;
+
+    // Utregning
+    const side = (m) => m > 0 ? 'underkant' : 'overkant';
+    const PN = n(P * 1000, 0), Lmm = n(L * 1000, 0);
+    let c = '';
+    if (ss) c =
+`R_A = R_B = P/2 = ${n(P, 1)}/2 = ${n(P / 2, 2)} kN ${dir > 0 ? '(oppover)' : '(nedover: oppleggene må holde bjelken nede)'}
+V        = ±P/2 = ±${n(P / 2, 2)} kN   (skifter fortegn under lasten)
+M_maks   = P·L/4 = ${n(P, 1)}·${n(L, 2)}/4 = ${n(Mmax, 2)} kNm   midt på, strekk i ${side(Mx(L / 2))}`;
+    if (cl) c =
+`R        = P = ${n(P, 2)} kN ${dir > 0 ? '(oppover)' : '(nedover)'}
+V        = P = ${n(P, 2)} kN   (konstant langs hele utkrageren)
+M_A      = P·L = ${n(P, 1)}·${n(L, 2)} = ${n(Mmax, 2)} kNm   ved innspenningen, strekk i ${side(Mx(0))}`;
+    if (ff) c =
+`R_A = R_B = P/2 = ${n(P / 2, 2)} kN      V = ±P/2 = ±${n(P / 2, 2)} kN
+M_A = M_B = −P·L/8 = −${n(P, 1)}·${n(L, 2)}/8 = ${n(-P * L / 8, 2)} kNm   ved innspenningene, strekk i ${side(Mx(0))}
+M_midt   = +P·L/8 = ${n(P * L / 8, 2)} kNm   strekk i ${side(Mx(L / 2))}`;
+    c += `
+I = b·h³/12 = ${b}·${h}³/12 = ${n(I, 0)} mm⁴        W = b·h²/6 = ${b}·${h}²/6 = ${n(W, 0)} mm³
+σ_maks   = M/W = ${n(Mmax, 2)}·10⁶ / ${n(W, 0)} = ${n(sig, 2)} MPa   (referanse f_m,k = 24 MPa: ${n(sig / 24 * 100, 0)} %)
+w_maks   = P·L³/(${kw}·E·I) = ${PN}·${Lmm}³/(${kw}·11 000·${n(I, 0)}) = ${n(wmax, 2)} mm   ${cl ? 'på tuppen' : 'midt på'}
+krav     = ${cl ? 'L/150 (tommelfingerregel for utkrager)' : 'L/300'} = ${n(lim, 2)} mm   → utnyttelse ${n(wmax / lim * 100, 0)} %`;
+    if (cl) c += `
+θ_tupp   = P·L²/(2·E·I) = ${PN}·${Lmm}²/(2·11 000·${n(I, 0)}) = ${n(P * 1e3 * (L * 1e3) ** 2 / (2 * E * I), 4)} rad = ${n(deg(P * 1e3 * (L * 1e3) ** 2 / (2 * E * I)), 2)}°`;
+    c += `
+Samme P og L:  fritt opplagt M = P·L/4, w = P·L³/48EI  |  utkrager M ×4, w ×16  |  innspent begge ender M ×½, w ×¼`;
+    $('e-calc').textContent = c;
+  }
+  bind(['e-case', 'e-dir', 'e-p', 'e-l', 'e-s'], () => { if (!eAuto) eAnim = 1; bjelke(); });
+  function setEAuto(v) { eAuto = v; $('e-auto').textContent = v ? 'Stopp animasjon' : 'Spill animasjon'; if (!v) { eAnim = 1; bjelke(); } }
+  $('e-auto').addEventListener('click', () => setEAuto(!eAuto));
+
+  // ---------- Statisk ubestemt: innspent i A, opplegg i C ----------
+  const UB = { '48x198': [48, 198], '48x223': [48, 223], '73x223': [73, 223], '98x223': [98, 223], '140x270': [140, 270] };
+  const X_STEPS = ['Steg 0: systemet', 'Steg 1: fjern opplegg C', 'Steg 2: R_C alene', 'Steg 3: legg sammen'];
+  let xStep = 0, xTw = 1;
+  function ubestemt() {
+    const F = +$('x-f').value, M0 = +$('x-m').value, L = +$('x-l').value, cr = +$('x-c').value, [bb, hh] = UB[$('x-s').value];
+    $('x-f-o').textContent = n(F, 1) + ' kN'; $('x-m-o').textContent = n(M0, 1) + ' kNm'; $('x-l-o').textContent = n(L, 1) + ' m'; $('x-c-o').textContent = n(cr * L, 2) + ' m';
+    $('x-step').textContent = X_STEPS[xStep];
+    const b = 0.4 * L, c = cr * L, d = 0.85 * L, E = 11000, I = bb * hh ** 3 / 12, EI = E * I;
+    const RC = F * (3 * d - c) / (2 * c) + 3 * M0 * b * (2 * c - b) / (2 * c ** 3);
+    const RA = F - RC, MA = F * d + M0 - RC * c;          // MA > 0: mot klokka (fra veggen på bjelken)
+    // Momenter (+ = strekk i underkant) og skjær (sum krefter til venstre, opp = +)
+    const M1 = x => -F * Math.max(d - x, 0) - (x < b ? M0 : 0);
+    const M2 = x => x < c ? RC * (c - x) : 0;
+    const V1 = x => x < d ? F : 0, V2 = x => x < c ? -RC : 0;
+    const Ms = [M1, M1, M2, x => M1(x) + M2(x)][xStep], Vs = [V1, V1, V2, x => V1(x) + V2(x)][xStep];
+    // Nedbøyning ved numerisk integrasjon: w'' = −M/EI, w(0) = w'(0) = 0 (w ned = +)
+    const Nn = 1200, dx = L * 1000 / Nn, xs = Array.from({ length: Nn + 1 }, (_, i) => L * i / Nn);
+    const defl = Mf => { const w = [0], e = 1e-9 * L; let th = 0, ww = 0; for (let i = 1; i <= Nn; i++) { const k0 = -Mf(xs[i - 1] + e) * 1e6 / EI, k1 = -Mf(xs[i] - e) * 1e6 / EI; ww += th * dx + (2 * k0 + k1) / 6 * dx * dx; th += (k0 + k1) / 2 * dx; w.push(ww); } return w; };
+    const w1 = defl(M1), w2 = defl(M2), wt = w1.map((v, i) => v + w2[i]), ic = Math.round(cr * Nn);
+    const wsel = [null, w1, w2, wt][xStep];
+    const mx = arr => Math.max(...arr.map(Math.abs), 1e-9);
+    const scl = xStep === 3 ? 30 / mx(wt) : 40 / Math.max(mx(w1), mx(w2));
+
+    const x0 = 70, x1 = 580, X = x => x0 + x / L * (x1 - x0), by = 140;
+    const Yb = i => by + (wsel ? -wsel[i] * scl * xTw * -1 : 0);
+    const yAt = x => Yb(Math.round(x / L * Nn));
+    let s = '';
+    // Vegg i A
+    s += `<rect x="${x0 - 16}" y="${by - 50}" width="16" height="100" fill="#252b30" stroke="${C.fg}" stroke-width="1.2"/>`;
+    for (let yy = by - 46; yy < by + 46; yy += 10) s += line(x0 - 16, yy + 8, x0 - 6, yy, C.mu, 0.8);
+    s += line(x0, by, x1, by, C.ln, 1, '4 4');
+    // Bjelke
+    const P = xs.map((x, i) => [X(x), Yb(i)]);
+    s += `<path d="${P.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + (p[1] - 8).toFixed(1)).join(' ')} ${P.slice().reverse().map(p => 'L' + p[0].toFixed(1) + ' ' + (p[1] + 8).toFixed(1)).join(' ')} Z" fill="${C.woodFill}" stroke="${C.wood}" stroke-width="1.2"/>`;
+    // Opplegg C
+    const cx = X(c), cy = yAt(c);
+    const sup = `<polygon points="${cx},${by + 9} ${cx - 12},${by + 28} ${cx + 12},${by + 28}" fill="none" stroke="${C.fg}" stroke-width="1.5"/>` + line(cx - 16, by + 32, cx + 16, by + 32, C.fg, 1.5);
+    s += xStep === 1 || xStep === 2 ? `<g opacity="0.35" stroke-dasharray="4 3">${sup}</g>` : sup;
+    // Laster
+    const loadsOn = xStep !== 2, lc = loadsOn ? C.a : '#4a535a';
+    const dxp = X(d), dyp = yAt(d);
+    s += arrow(dxp, dyp - 74, dxp, dyp - 10, lc, 3.5) + txt(dxp + 8, dyp - 58, 'F_D = ' + n(F, 1) + ' kN', { c: lc, s: 12 });
+    if (Math.abs(M0) > 1e-9) {
+      const bx = X(b), byb = yAt(b) - 6, r = 26, cw = M0 > 0;
+      const pa = t => [bx + r * Math.cos(rad(t)), byb - r * Math.sin(rad(t))];
+      const seq = sample(160, 20, t => t, 24).map(([t]) => t), sq = cw ? seq : seq.slice().reverse();
+      s += path(sq.map(pa), lc, 2.5);
+      const e1 = pa(sq[sq.length - 2]), e2 = pa(sq[sq.length - 1]);
+      s += arrow(e1[0], e1[1], e2[0] + (e2[0] - e1[0]) * 1.6, e2[1] + (e2[1] - e1[1]) * 1.6, lc, 2.5);
+      s += txt(bx, byb - r - 12, 'M_B = ' + n(Math.abs(M0), 1) + ' kNm', { a: 'middle', c: lc, s: 12 });
+    }
+    // R_C (steg 2 og 3)
+    if (xStep >= 2) s += arrow(cx + 26, by + 76, cx + 26, by + 12, C.g, 3) + txt(cx + 32, by + 72, 'R_C = ' + n(RC, 2), { c: C.g, s: 12 });
+    // Reaksjoner i A (steg 3)
+    if (xStep === 3) {
+      const ax = x0 + 70;
+      s += RA >= 0 ? arrow(ax, by + 70, ax, by + 12, C.g, 2.5) : arrow(ax, by - 70, ax, by - 12, C.g, 2.5);
+      s += txt(ax + 6, RA >= 0 ? by + 68 : by - 76, 'R_A = ' + n(RA, 2) + (RA < 0 ? ' (ned)' : ''), { c: C.g, s: 11 });
+      if (Math.abs(MA) > 1e-6) {
+        const r = 28, pa = t => [x0 + 30 + r * Math.cos(rad(t)), by - 12 - r * Math.sin(rad(t))];
+        const angs = sample(25, 155, t => t, 24).map(([t]) => t), seq = MA > 0 ? angs : angs.slice().reverse();
+        s += path(seq.map(pa), C.g, 2);
+        const e1 = pa(seq[seq.length - 2]), e2 = pa(seq[seq.length - 1]);
+        s += arrow(e1[0], e1[1], e2[0] + (e2[0] - e1[0]) * 1.5, e2[1] + (e2[1] - e1[1]) * 1.5, C.g, 2);
+        s += txt(x0 + 30, by - 50, 'M_A = ' + n(Math.abs(MA), 2), { a: 'middle', c: C.g, s: 11 });
+      }
+    }
+    // Nedbøyning i C
+    if (xStep >= 1) {
+      const wc = wsel[ic], show = xStep === 3 ? 'w_C ≈ ' + n(Math.abs(wc) < 0.05 ? 0 : wc, 2) + ' mm ✓' : (xStep === 1 ? 'δ_C = ' + n(wc, 1) + ' mm ned' : 'δ_C = ' + n(-wc, 1) + ' mm opp');
+      s += txt(cx - 16, by + 52, show, { a: 'end', c: xStep === 3 ? C.g : C.fg, s: 12 });
+      if (xStep < 3) s += line(cx, by, cx, cy, C.fg, 1.5, '3 2');
+    }
+    // Punktnavn
+    [['A', 0], ['B', b], ['C', c], ['D', d], ['E', L]].forEach(([l, x]) => { s += txt(x === 0 ? x0 - 24 : X(x) + (l === 'C' ? -26 : 0), x === 0 ? by + 5 : yAt(x) + 26, l, { a: 'middle', c: C.b, s: 14, w: 600 }); });
+    s += txt(x1, 22, xStep === 0 ? '' : xStep === 3 ? 'deformasjon forstørret (egen skala)' : 'deformasjon forstørret (lik skala i steg 1 og 2)', { a: 'end', s: 10 });
+
+    // Diagrammer
+    if (xStep === 0) {
+      s += txt(320, 340, 'Trykk «Neste steg». Diagrammene for hvert lasttilfelle vises i steg 1–3.', { a: 'middle', s: 12 });
+    } else {
+      const yV = 290, yM = 420;
+      const xsD = [0, b - 1e-6, b, c - 1e-6, c, d - 1e-6, d, L];
+      const Vmax = Math.max(...xsD.map(x => Math.abs(Vs(x))), 1e-9), sv = 30 / Vmax;
+      s += txt(8, yV + 4, 'V (kN)', { s: 11 }) + line(x0, yV, x1, yV, C.mu);
+      const vp = []; [0, c, d, L].forEach((x, i, arr) => { if (i < arr.length - 1) { vp.push([X(x), yV - Vs(x + 1e-6) * sv], [X(arr[i + 1]), yV - Vs(x + 1e-6) * sv]); } });
+      s += path([[X(0), yV], ...vp, [X(L), yV]], C.b, 1.5, null, C.b, 0.3);
+      [[0, c], [c, d]].forEach(([p, q]) => { const v = Vs((p + q) / 2); if (Math.abs(v) > 1e-6) s += txt((X(p) + X(q)) / 2, yV - v * sv + (v > 0 ? -6 : 14), (v > 0 ? '+' : '') + n(v, 2), { a: 'middle', c: C.fg, s: 11 }); });
+      const pts = []; for (let i = 0; i <= 600; i++) { const x = L * i / 600; if (Math.abs(x - b) < L / 1200) { pts.push([X(b), yM + Ms(b - 1e-9) * 0], [X(b), yM]); } pts.push([X(x), x]); }
+      const Mabs = Math.max(...[0, b - 1e-9, b, c, d].map(x => Math.abs(Ms(x))), 1e-9), sm = 62 / Mabs;
+      const mp = []; for (let i = 0; i <= 600; i++) { const x = L * i / 600; if (x >= b && L * (i - 1) / 600 < b) mp.push([X(b), yM + Ms(b - 1e-9) * sm], [X(b), yM + Ms(b) * sm]); mp.push([X(x), yM + Ms(x) * sm]); }
+      s += txt(8, yM + 4, 'M (kNm)', { s: 11 }) + line(x0, yM, x1, yM, C.mu);
+      s += path([[X(0), yM], ...mp, [X(L), yM]], C.a, 1.8, null, C.a, 0.3);
+      const lab = (x, v, a, dxl = 0) => Math.abs(v) < 0.005 ? '' : txt(X(x) + dxl, yM + v * sm + (v > 0 ? 15 : -7), (v > 0 ? '+' : '') + n(v, 2), { a, c: C.fg, s: 11 });
+      s += lab(0, Ms(0), 'start', 4) + (Math.abs(Ms(b - 1e-9) - Ms(b)) > 0.005 ? lab(b, Ms(b - 1e-9), 'end', -4) + lab(b, Ms(b), 'start', 4) : lab(b, Ms(b), 'middle')) + lab(c, Ms(c), 'middle');
+      s += txt(x1, 512, 'M tegnet på strekksiden. Spranget i B er lik M_B.', { a: 'end', s: 10 });
+    }
+    $('x-svg').innerHTML = s;
+
+    // Utregning
+    const bm = b * 1e3, cm = c * 1e3, dm = d * 1e3;
+    const dF = F * 1e3 * cm ** 2 * (3 * dm - cm) / (6 * EI), dM = M0 * 1e6 * bm * (2 * cm - bm) / (2 * EI), dR = RC * 1e3 * cm ** 3 / (3 * EI);
+    const L0 = `Geometri: A–B = ${n(b, 2)} m, A–C = ${n(c, 2)} m, A–D = ${n(d, 2)} m, A–E = ${n(L, 2)} m.  EI = 11 000·${n(I, 0)} N·mm²
+Ukjente: R_A, M_A, R_C (3).  Likevekt: ΣF_y = 0 og ΣM = 0 (2).  → 1 gang statisk ubestemt, trenger w_C = 0.`;
+    const L1 = `Steg 1 – fjern C (utkrager):
+  δ_C,F = F·c²·(3d − c)/(6EI) = ${n(F * 1e3, 0)}·${n(cm, 0)}²·(3·${n(dm, 0)} − ${n(cm, 0)})/(6EI) = ${n(dF, 2)} mm ned
+  δ_C,M = M_B·b·(2c − b)/(2EI) = ${n(M0 * 1e6, 0)}·${n(bm, 0)}·(2·${n(cm, 0)} − ${n(bm, 0)})/(2EI) = ${n(dM, 2)} mm ned
+  δ_C   = ${n(dF, 2)} + ${n(dM, 2)} = ${n(dF + dM, 2)} mm   (numerisk kontroll: ${n(w1[ic], 2)} mm)`;
+    const L2 = `Steg 2 – R_C alene:  δ_C,R = R_C·c³/(3EI)   (opp)
+  Krav w_C = 0:  R_C·c³/(3EI) = δ_C  →  R_C = F·(3d − c)/(2c) + 3·M_B·b·(2c − b)/(2c³)
+  R_C = ${n(F, 1)}·(${n(3 * d - c, 2)})/(${n(2 * c, 2)}) + 3·${n(M0, 1)}·${n(b, 2)}·(${n(2 * c - b, 2)})/(2·${n(c ** 3, 3)}) = ${n(RC, 2)} kN   (δ_C,R = ${n(dR, 2)} mm ✓)`;
+    const L3 = `Steg 3 – likevekt for hele bjelken:
+  R_A = F − R_C = ${n(F, 2)} − ${n(RC, 2)} = ${n(RA, 2)} kN ${RA < 0 ? '(nedover: A må holde bjelken nede)' : '(oppover)'}
+  M_A = F·d + M_B − R_C·c = ${n(F * d, 2)} + ${n(M0, 2)} − ${n(RC * c, 2)} = ${n(MA, 2)} kNm ${MA >= 0 ? '(mot klokka)' : '(med klokka)'}
+  M(A) = ${n(M1(0) + M2(0), 2)}   M(B−) = ${n(M1(b - 1e-9) + M2(b - 1e-9), 2)}   M(B+) = ${n(M1(b) + M2(b), 2)}   M(C) = ${n(M1(c) + M2(c), 2)} kNm
+  Kontroll: w_C ≈ ${n(Math.abs(wt[ic]) < 0.05 ? 0 : wt[ic], 2)} mm ✓ (numerisk)     σ_maks = |M|_maks/W = ${n(Math.max(...[0, b - 1e-9, b, c].map(x => Math.abs(M1(x) + M2(x)))) * 1e6 / (bb * hh * hh / 6), 2)} MPa`;
+    $('x-calc').textContent = [L0, L1, L2, L3].slice(0, xStep + 1).join('\n');
+  }
+  bind(['x-f', 'x-m', 'x-l', 'x-c', 'x-s'], ubestemt);
+  $('x-next').addEventListener('click', () => { xStep = Math.min(3, xStep + 1); xTw = reduce ? 1 : 0; ubestemt(); });
+  $('x-prev').addEventListener('click', () => { xStep = Math.max(0, xStep - 1); xTw = reduce ? 1 : 0; ubestemt(); });
+
+  // ---------- Fagverksbro med vandrende last ----------
+  function solveTruss(nodes, mem, sup, loads) {
+    const m = mem.length, nu = m + sup.length, ne = 2 * nodes.length;
+    const A = Array.from({ length: ne }, () => new Float64Array(nu + 1));
+    mem.forEach(([i, j], k) => {
+      const dx = nodes[j][0] - nodes[i][0], dy = nodes[j][1] - nodes[i][1], l = Math.hypot(dx, dy), cx = dx / l, cy = dy / l;
+      A[2 * i][k] += cx; A[2 * i + 1][k] += cy; A[2 * j][k] -= cx; A[2 * j + 1][k] -= cy;
+    });
+    sup.forEach(([i, dir], r) => { A[2 * i + (dir === 'y' ? 1 : 0)][m + r] = 1; });
+    loads.forEach(([i, fx, fy]) => { A[2 * i][nu] -= fx; A[2 * i + 1][nu] -= fy; });
+    for (let c = 0; c < nu; c++) {
+      let p = c; for (let r = c + 1; r < ne; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      [A[c], A[p]] = [A[p], A[c]];
+      const pv = A[c][c]; if (Math.abs(pv) < 1e-12) return null;
+      for (let k = c; k <= nu; k++) A[c][k] /= pv;
+      for (let r = 0; r < ne; r++) if (r !== c && A[r][c] !== 0) { const f = A[r][c]; for (let k = c; k <= nu; k++) A[r][k] -= f * A[c][k]; }
+    }
+    return A.map(row => row[nu]).slice(0, nu);
+  }
+  let wAuto = !reduce, wDir = 1;
+  function bro() {
+    const type = $('w-type').value, N = +$('w-n').value, L = +$('w-l').value, h = +$('w-h').value, P = +$('w-p').value, g = +$('w-g').value;
+    $('w-l-o').textContent = n(L, 0) + ' m'; $('w-h-o').textContent = n(h, 1) + ' m'; $('w-p-o').textContent = n(P, 0) + ' kN'; $('w-g-o').textContent = n(g, 0) + ' kN';
+    const cutIn = $('w-cut'); cutIn.max = N - 1; if (+cutIn.value > N - 1) cutIn.value = N - 1;
+    const pcut = +cutIn.value; $('w-cut-o').textContent = 'felt ' + pcut;
+    const xp = +$('w-x').value * L; $('w-x-o').textContent = n(xp, 1) + ' m';
+    const a = L / N, th = Math.atan(h / a);
+    // Knutepunkter: B0..BN (undergurt), T1..T(N−1) (overgurt) = indeks N+i
+    const nodes = []; for (let i = 0; i <= N; i++) nodes.push([i * a, 0]); for (let i = 1; i < N; i++) nodes.push([i * a, h]);
+    const B = i => i, T = i => N + i;
+    const mem = [];
+    for (let i = 1; i <= N; i++) mem.push([B(i - 1), B(i), 'U' + i, 'U']);
+    for (let i = 1; i <= N - 2; i++) mem.push([T(i), T(i + 1), 'O' + i, 'O']);
+    mem.push([B(0), T(1), 'E1', 'E'], [B(N), T(N - 1), 'E2', 'E']);
+    for (let i = 1; i < N; i++) mem.push([B(i), T(i), 'V' + i, 'V']);
+    const diag = {};
+    for (let i = 1; i <= N - 2; i++) {
+      const left = i + 1 <= N / 2;
+      let tx, bx;   // diagonalens topp- og bunnpunkt (indeks langs x)
+      if (type === 'pratt') { if (left) { tx = i; bx = i + 1; } else { tx = i + 1; bx = i; } }
+      else if (type === 'howe') { if (left) { tx = i + 1; bx = i; } else { tx = i; bx = i + 1; } }
+      else { if (i % 2) { tx = i; bx = i + 1; } else { tx = i + 1; bx = i; } }
+      diag[i] = { tx, bx, k: mem.length };
+      mem.push([B(bx), T(tx), 'D' + i, 'D']);
+    }
+    // Laster: kjøretøy fordelt på nærmeste knutepunkter, egenvekt i indre knutepunkter
+    const nodal = new Array(N + 1).fill(0);
+    const j = Math.min(N - 1, Math.floor(xp / a)), t = (xp - j * a) / a;
+    nodal[j] += P * (1 - t); nodal[j + 1] += P * t;
+    for (let i = 1; i < N; i++) nodal[i] += g;
+    const loads = nodal.map((f, i) => [B(i), 0, -f]).filter(l => l[2] !== 0);
+    const sol = solveTruss(nodes, mem, [[B(0), 'x'], [B(0), 'y'], [B(N), 'y']], loads);
+    if (!sol) return;
+    const F = sol.slice(0, mem.length), RA = sol[mem.length + 1], RB = sol[mem.length + 2];
+    const Mb = x => RA * x - nodal.reduce((s2, f, i) => s2 + (i * a < x ? f * (x - i * a) : 0), 0);
+    const Fsum = nodal.reduce((s2, f) => s2 + f, 0);
+    const Nref = Math.max((P * L / 4 + g * (N - 1) * L / 8) / h, 1e-9);
+
+    // Tegning
+    const k = Math.min(500 / L, 140 / h), ox = 75, oy = 205, X = x => ox + x * k, Y = y => oy - y * k;
+    let s = '';
+    s += `<rect x="${X(0) - 34}" y="${oy + 30}" width="52" height="70" fill="#3a3f44" stroke="${C.mu}" stroke-width="1"/>`;
+    s += `<rect x="${X(L) - 18}" y="${oy + 30}" width="52" height="70" fill="#3a3f44" stroke="${C.mu}" stroke-width="1"/>`;
+    s += support(X(0), oy + 12) + `<polygon points="${X(L)},${oy + 12} ${X(L) - 10},${oy + 26} ${X(L) + 10},${oy + 26}" fill="none" stroke="${C.fg}" stroke-width="1.5"/>`;
+    s += line(X(0) - 20, oy + 8, X(L) + 20, oy + 8, '#4a535a', 3);
+    const cutK = new Set(pcut >= 2 && pcut <= N - 1 ? ['U' + pcut, 'O' + (pcut - 1), 'D' + (pcut - 1)] : []);
+    mem.forEach(([i, jn, name], idx) => {
+      const v = F[idx], r = Math.abs(v) / Nref, zero = Math.abs(v) < 0.005 * Nref;
+      const col = zero ? C.mu : v > 0 ? C.r : C.b;
+      s += line(X(nodes[i][0]), Y(nodes[i][1]), X(nodes[jn][0]), Y(nodes[jn][1]), col, zero ? 1.2 : 1.5 + 7 * Math.min(r, 1.3), zero ? '4 3' : null);
+    });
+    nodes.forEach(([x, y]) => { s += `<circle cx="${X(x)}" cy="${Y(y)}" r="3" fill="${C.fg}"/>`; });
+    // Snitt
+    if (cutK.size) {
+      const xm = X((pcut - 0.32) * a);
+      s += line(xm - 10, Y(h) - 22, xm + 10, oy + 22, C.fg, 1.5, '6 4') + txt(xm + 12, Y(h) - 24, 'snitt', { s: 11, c: C.fg });
+      mem.forEach(([i, jn, name], idx) => {
+        if (!cutK.has(name)) return;
+        const xl2 = (pcut - 0.72) * a, [xa, ya] = nodes[i], [xb2, yb2] = nodes[jn], tt = Math.abs(xb2 - xa) < 1e-9 ? 0.5 : (xl2 - xa) / (xb2 - xa);
+        const mx = X(xl2), my = Y(ya + (yb2 - ya) * tt);
+        const v = F[idx], dy2 = name[0] === 'O' ? -10 : name[0] === 'U' ? 20 : 4;
+        s += txt(mx + (name[0] === 'D' ? -8 : 0), my + dy2, name + ' ' + (v > 0 ? '+' : '') + n(v, 0), { a: name[0] === 'D' ? 'end' : 'middle', s: 11, c: Math.abs(v) < 0.005 * Nref ? C.mu : v > 0 ? C.r : C.b, w: 600 });
+      });
+    }
+    // Kjøretøy
+    const vx = X(xp);
+    s += `<rect x="${vx - 15}" y="${oy - 18}" width="30" height="12" rx="2" fill="${C.a}"/><circle cx="${vx - 9}" cy="${oy - 4}" r="3" fill="${C.fg}"/><circle cx="${vx + 9}" cy="${oy - 4}" r="3" fill="${C.fg}"/>`;
+    s += txt(vx, oy - 24, 'P', { a: 'middle', c: C.a, s: 12, w: 600 });
+    // Reaksjoner
+    s += arrow(X(0) - 26, oy + 56, X(0) - 26, oy + 16, C.g, 2.5) + txt(X(0) - 30, oy + 54, n(RA, 0), { a: 'end', c: C.g, s: 11 });
+    s += arrow(X(L) + 26, oy + 56, X(L) + 26, oy + 16, C.g, 2.5) + txt(X(L) + 30, oy + 54, n(RB, 0), { c: C.g, s: 11 });
+    s += `<rect x="440" y="10" width="18" height="4" fill="${C.r}"/>` + txt(463, 16, 'strekk', { s: 11 }) + `<rect x="518" y="10" width="18" height="4" fill="${C.b}"/>` + txt(541, 16, 'trykk', { s: 11 });
+    s += txt(12, 16, 'tykkelse = stavkraft', { s: 10 });
+    // Bjelkeanalogi: M(x)
+    const yM = 330, Mmax = Math.max(...nodal.map((_, i) => Mb(i * a)), 1e-9), Mref = Nref * h, sm = 70 / Mref;
+    s += txt(8, yM + 4, 'M (kNm)', { s: 11 }) + line(X(0), yM, X(L), yM, C.mu);
+    s += path([[X(0), yM], ...nodal.map((_, i) => [X(i * a), yM + Mb(i * a) * sm]), [X(L), yM]], C.a, 1.8, null, C.a, 0.3);
+    let im = 0; nodal.forEach((_, i) => { if (Mb(i * a) > Mb(im * a)) im = i; });
+    s += txt(X(im * a), yM + Mmax * sm + 15, 'M_maks = ' + n(Mmax, 0) + ' → M/h = ' + n(Mmax / h, 0) + ' kN', { a: 'middle', c: C.fg, s: 11 });
+    s += txt(X(L), 432, 'Bjelkeanalogi: gurtkraft ≈ M/h, diagonalkraft ≈ V/sin θ', { a: 'end', s: 10 });
+    $('w-svg').innerHTML = s;
+
+    // Utregning
+    const fmtN = v => (v > 0 ? '+' : '') + n(v, 1);
+    let iMax = 0, iMin = 0; F.forEach((v, i) => { if (v > F[iMax]) iMax = i; if (v < F[iMin]) iMin = i; });
+    let c = `Geometri: L = ${n(L, 1)} m, ${N} felt, a = L/N = ${n(a, 2)} m, h = ${n(h, 2)} m, θ = atan(h/a) = ${n(deg(th), 1)}°
+Kjøretøy P = ${n(P, 0)} kN ved x = ${n(xp, 2)} m → B${j}: ${n(P * (1 - t), 1)} kN, B${j + 1}: ${n(P * t, 1)} kN.  Egenvekt g = ${n(g, 0)} kN i hvert indre knutepunkt
+Reaksjoner: R_A = ${n(RA, 1)} kN, R_B = ${n(RB, 1)} kN    kontroll: ${n(RA + RB, 1)} = ΣF = ${n(Fsum, 1)} ✓`;
+    if (cutK.size) {
+      const i = pcut - 1, dg = diag[i], xt = dg.tx * a, xb = dg.bx * a;
+      const V = RA - nodal.reduce((s2, f, q) => s2 + (q <= i ? f : 0), 0);
+      const fU = F[mem.findIndex(m2 => m2[2] === 'U' + pcut)], fO = F[mem.findIndex(m2 => m2[2] === 'O' + i)], fD = F[dg.k];
+      c += `
+Snitt i felt ${pcut} (x = ${n((pcut - 1) * a, 1)}–${n(pcut * a, 1)} m) kutter U${pcut}, O${i} og D${i}:
+  U${pcut} = M(${n(xt, 1)})/h = ${n(Mb(xt), 1)}/${n(h, 2)} = ${fmtN(Mb(xt) / h)} kN     knutepunktsmetoden: ${fmtN(fU)} ✓
+  O${i} = −M(${n(xb, 1)})/h = −${n(Mb(xb), 1)}/${n(h, 2)} = ${fmtN(-Mb(xb) / h)} kN     knutepunktsmetoden: ${fmtN(fO)} ✓
+  |D${i}| = |V|/sin θ = ${n(Math.abs(V), 1)}/${n(Math.sin(th), 3)} = ${n(Math.abs(V) / Math.sin(th), 1)} kN     knutepunktsmetoden: ${fmtN(fD)} (${fD > 0 ? 'strekk' : 'trykk'})`;
+    }
+    c += `
+Største strekk: ${mem[iMax][2]} = ${fmtN(F[iMax])} kN     Største trykk: ${mem[iMin][2]} = ${fmtN(F[iMin])} kN  (sjekk knekking)`;
+    $('w-calc').textContent = c;
+  }
+  bind(['w-type', 'w-n', 'w-l', 'w-h', 'w-p', 'w-g', 'w-cut'], bro);
+  $('w-x').addEventListener('input', () => { setWAuto(false); bro(); });
+  function setWAuto(v) { wAuto = v; $('w-auto').textContent = v ? 'Stopp kjøretøyet' : 'Kjør over brua'; }
+  $('w-auto').addEventListener('click', () => setWAuto(!wAuto));
+
+  // ---------- Bjelketabell (21 lasttilfeller) ----------
+  // Generell bjelkeløser: FEM (Hermite-elementer) for forskyvning og reaksjoner, statikk for V og M.
+  function beamFE(len, sups, pts, dist, EI) {
+    // Bruddpunkter: slå sammen punkter nærmere enn 1e-6·len (flyttall som 3,3 + 1,2 = 4,4999999…)
+    const raw = [0, len]; sups.forEach(s2 => raw.push(s2.x)); pts.forEach(p => raw.push(p.x)); dist.forEach(d => { raw.push(d.a, d.b); });
+    const tolX = 1e-6 * len, xs0 = [];
+    raw.filter(x => x >= -tolX && x <= len + tolX).sort((p, q) => p - q).forEach(x => { if (!xs0.length || x - xs0[xs0.length - 1] > tolX) xs0.push(x); });
+    const snap = x => { for (const y of xs0) if (Math.abs(x - y) <= tolX) return y; return x; };
+    sups = sups.map(s2 => ({ ...s2, x: snap(s2.x) })); pts = pts.map(p => ({ ...p, x: snap(p.x) })); dist = dist.map(d => ({ ...d, a: snap(d.a), b: snap(d.b) }));
+    len = xs0[xs0.length - 1];
+    const xs = [0], tgt = len / 300;
+    for (let i = 1; i < xs0.length; i++) { const A = xs0[i - 1], B2 = xs0[i], m = Math.max(1, Math.ceil((B2 - A) / tgt)); for (let k = 1; k <= m; k++) xs.push(A + (B2 - A) * k / m); }
+    const nn = xs.length, nd = 2 * nn, BW = 4;
+    const K = Array.from({ length: nd }, () => new Float64Array(2 * BW + 1)); // K[r][c - r + BW]
+    const kAdd = (r, c, v) => { K[r][c - r + BW] += v; };
+    const f = new Float64Array(nd);
+    const nodeAt = x => { let lo = 0, hi = nn - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (xs[mid] < x - 1e-9) lo = mid + 1; else hi = mid; } return lo; };
+    const qAt = (d, x) => d.q1 + (d.q2 - d.q1) * (x - d.a) / (d.b - d.a);
+    let leMin = Infinity;
+    const ke = l => { const c = EI / l ** 3; return [[12, 6 * l, -12, 6 * l], [6 * l, 4 * l * l, -6 * l, 2 * l * l], [-12, -6 * l, 12, -6 * l], [6 * l, 2 * l * l, -6 * l, 4 * l * l]].map(r => r.map(v => v * c)); };
+    for (let e = 0; e < nn - 1; e++) {
+      const l = xs[e + 1] - xs[e]; leMin = Math.min(leMin, l);
+      const k = ke(l), dofs = [2 * e, 2 * e + 1, 2 * e + 2, 2 * e + 3];
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) kAdd(dofs[i], dofs[j], k[i][j]);
+      dist.forEach(d => {
+        if (xs[e] < d.a - 1e-9 || xs[e + 1] > d.b + 1e-9) return;
+        const q1 = qAt(d, xs[e]), q2 = qAt(d, xs[e + 1]);      // nedover = positiv q
+        f[dofs[0]] -= l * (7 * q1 + 3 * q2) / 20; f[dofs[1]] -= l * l * (3 * q1 + 2 * q2) / 60;
+        f[dofs[2]] -= l * (3 * q1 + 7 * q2) / 20; f[dofs[3]] += l * l * (2 * q1 + 3 * q2) / 60;
+      });
+    }
+    pts.forEach(p => { f[2 * nodeAt(p.x)] -= p.P; });
+    const cons = []; sups.forEach(s2 => { const nI = nodeAt(s2.x); cons.push(2 * nI); if (s2.t === 'fix') cons.push(2 * nI + 1); });
+    const kp = 1e9 * 12 * EI / leMin ** 3;
+    const A = K.map(r => Float64Array.from(r)), b = Float64Array.from(f);
+    cons.forEach(d => { A[d][BW] += kp; });
+    for (let k = 0; k < nd; k++) {
+      const pv = A[k][BW];
+      for (let r = k + 1; r <= Math.min(k + BW, nd - 1); r++) {
+        const fac = A[r][k - r + BW] / pv; if (!fac) continue;
+        for (let c = k; c <= Math.min(k + BW, nd - 1); c++) A[r][c - r + BW] -= fac * A[k][c - k + BW];
+        b[r] -= fac * b[k];
+      }
+    }
+    const u = new Float64Array(nd);
+    for (let r = nd - 1; r >= 0; r--) { let sum = b[r]; for (let c = r + 1; c <= Math.min(r + BW, nd - 1); c++) sum -= A[r][c - r + BW] * u[c]; u[r] = sum / A[r][BW]; }
+    // Reaksjoner = K·u − f i fastholdte frihetsgrader (opp og mot klokka = +)
+    const Ku = d => { let sum = 0; for (let c = Math.max(0, d - BW); c <= Math.min(nd - 1, d + BW); c++) sum += K[d][c - d + BW] * u[c]; return sum; };
+    const R = sups.map(s2 => { const nI = nodeAt(s2.x); return { x: s2.x, t: s2.t, V: Ku(2 * nI) - f[2 * nI], C: s2.t === 'fix' ? Ku(2 * nI + 1) - f[2 * nI + 1] : 0 }; });
+    // Statikk fra venstre: V(x) og M(x), M > 0 = strekk i underkant
+    const QM = (d, x) => { if (x <= d.a) return [0, 0]; const sL = Math.min(x, d.b) - d.a, dd = x - d.a, kq = (d.q2 - d.q1) / (d.b - d.a); return [d.q1 * sL + kq * sL * sL / 2, d.q1 * (dd * sL - sL * sL / 2) + kq * (dd * sL * sL / 2 - sL ** 3 / 3)]; };
+    const VM = x => {
+      let V = 0, M = 0;
+      R.forEach(r => { if (r.x < x) { V += r.V; M += r.V * (x - r.x) - r.C; } });
+      pts.forEach(p => { if (p.x < x) { V -= p.P; M -= p.P * (x - p.x); } });
+      dist.forEach(d => { const [q, m] = QM(d, x); V -= q; M -= m; });
+      return [V, M];
+    };
+    const wn = xs.map((_, i) => -u[2 * i] * 1000);  // mm, ned = +
+    const wAt = x => { const i = Math.min(nn - 2, Math.max(0, nodeAt(x) - (xs[nodeAt(x)] > x ? 1 : 0))); const t = (x - xs[i]) / (xs[i + 1] - xs[i] || 1); return wn[i] + (wn[i + 1] - wn[i]) * t; };
+    const grid = []; for (let i = 0; i <= 800; i++) grid.push(len * i / 800);
+    xs0.forEach(x => { grid.push(x - 1e-7, x + 1e-7); });
+    const gx = grid.filter(x => x >= 0 && x <= len).sort((p, q) => p - q);
+    const gv = gx.map(VM);
+    let Mpos = 0, Mneg = 0, xPos = 0, xNeg = 0, Vabs = 0;
+    gv.forEach(([V, M], i) => { if (M > Mpos) { Mpos = M; xPos = gx[i]; } if (M < Mneg) { Mneg = M; xNeg = gx[i]; } Vabs = Math.max(Vabs, Math.abs(V)); });
+    let wmax = 0, xw = 0, wup = 0; wn.forEach((w, i) => { if (w > wmax) { wmax = w; xw = xs[i]; } if (-w > wup) wup = -w; });
+    return { xs, wn, R, VM, gx, gv, Mpos, Mneg, xPos, xNeg, Vabs, wmax, xw, wup, wAt, ne: nn - 1 };
+  }
+
+  const BT_SEC = { '48x148': [48, 148, 11000], '48x198': [48, 198, 11000], '48x223': [48, 223, 11000], '73x223': [73, 223, 11000], '98x223': [98, 223, 11000], '115x315 GL30c': [115, 315, 13000], '140x405 GL30c': [140, 405, 13000] };
+  const pin = x => ({ x, t: 'pin' }), fix = x => ({ x, t: 'fix' }), U = (a, b, q) => ({ a, b, q1: q, q2: q });
+  const s3 = Math.sqrt(3);
+  // Hver case: need (inndata), build(v) → system, calc(v, N, EI) → linjer + kontroller [navn, formel, numerisk]
+  const BT = {
+    '21': { need: 'L q', build: v => ({ len: v.L, sups: [pin(0), pin(v.L)], pts: [], dist: [U(0, v.L, v.q)], span: v.L, div: 300 }),
+      calc: ({ L, q }, N, EI) => [[
+        `R_A = R_B = q·L/2 = ${f2(q)}·${f2(L)}/2 = ${f2(q * L / 2)} kN`,
+        `M_maks = q·L²/8 = ${f2(q)}·${f2(L)}²/8 = ${f2(q * L * L / 8)} kNm   midt i spennet`,
+        `w_maks = 5·q·L⁴/(384·EI) = 5·${f2(q)}·${f2(L)}⁴/(384·${f0(EI)}) = ${f2(5 * q * L ** 4 / (384 * EI) * 1e3)} mm`],
+        [['R_A', q * L / 2, N.R[0].V], ['M_maks', q * L * L / 8, N.Mpos], ['w_maks', 5 * q * L ** 4 / (384 * EI) * 1e3, N.wmax]]] },
+    '22': { need: 'L q a c', build: v => { const a0 = v.a * v.L, b0 = Math.min(v.L, a0 + v.c); return { len: v.L, sups: [pin(0), pin(v.L)], pts: [], dist: [U(a0, b0, v.q)], span: v.L, div: 300 }; },
+      calc: ({ L, q, a, c }, N, EI) => { const a0 = a * L, cc = Math.min(L, a0 + c) - a0, RA = q * cc * (L - a0 - cc / 2) / L, RB = q * cc - RA, Mm = RA * a0 + RA * RA / (2 * q); return [[
+        `Last fra x = ${f2(a0)} til ${f2(a0 + cc)} m (lengde c = ${f2(cc)} m), resultant q·c = ${f2(q * cc)} kN`,
+        `R_A = q·c·(L − a − c/2)/L = ${f2(q)}·${f2(cc)}·(${f2(L)} − ${f2(a0)} − ${f2(cc / 2)})/${f2(L)} = ${f2(RA)} kN     R_B = q·c − R_A = ${f2(RB)} kN`,
+        `M_maks der V = 0:  x₀ = a + R_A/q = ${f2(a0 + RA / q)} m   M_maks = R_A·a + R_A²/(2q) = ${f2(Mm)} kNm`,
+        `w_maks beregnes numerisk (ingen enkel formel)`],
+        [['R_A', RA, N.R[0].V], ['R_B', RB, N.R[1].V], ['M_maks', Mm, N.Mpos]]]; } },
+    '23': { need: 'L q', build: v => ({ len: v.L, sups: [pin(0), pin(v.L)], pts: [], dist: [{ a: 0, b: v.L, q1: 0, q2: v.q }], span: v.L, div: 300 }),
+      calc: ({ L, q }, N, EI) => [[
+        `Lasten øker lineært fra 0 ved A til q ved B, resultant q·L/2 = ${f2(q * L / 2)} kN i L/3 fra B`,
+        `R_A = q·L/6 = ${f2(q * L / 6)} kN     R_B = q·L/3 = ${f2(q * L / 3)} kN`,
+        `M_maks = q·L²/(9·√3) = ${f2(q * L * L / (9 * s3))} kNm   ved x = L/√3 = ${f2(L / s3)} m`,
+        `w_maks ≈ 0,00652·q·L⁴/EI = ${f2(0.006522 * q * L ** 4 / EI * 1e3)} mm   ved x ≈ 0,519·L`],
+        [['R_A', q * L / 6, N.R[0].V], ['M_maks', q * L * L / (9 * s3), N.Mpos], ['w_maks', 0.006522 * q * L ** 4 / EI * 1e3, N.wmax]]] },
+    '24': { need: 'L P', build: v => ({ len: v.L, sups: [pin(0), pin(v.L)], pts: [{ x: v.L / 2, P: v.P }], dist: [], span: v.L, div: 300 }),
+      calc: ({ L, P }, N, EI) => [[
+        `R_A = R_B = P/2 = ${f2(P / 2)} kN`,
+        `M_maks = P·L/4 = ${f2(P)}·${f2(L)}/4 = ${f2(P * L / 4)} kNm   under lasten`,
+        `w_maks = P·L³/(48·EI) = ${f2(P)}·${f2(L)}³/(48·${f0(EI)}) = ${f2(P * L ** 3 / (48 * EI) * 1e3)} mm`],
+        [['R_A', P / 2, N.R[0].V], ['M_maks', P * L / 4, N.Mpos], ['w_maks', P * L ** 3 / (48 * EI) * 1e3, N.wmax]]] },
+    '25': { need: 'L P a', build: v => ({ len: v.L, sups: [pin(0), pin(v.L)], pts: [{ x: v.a * v.L, P: v.P }], dist: [], span: v.L, div: 300 }),
+      calc: ({ L, P, a }, N, EI) => { const A1 = a * L, B1 = L - A1, bs = Math.min(A1, B1), wm = P * bs * (L * L - bs * bs) ** 1.5 / (9 * s3 * L * EI) * 1e3; return [[
+        `a = ${f2(A1)} m, b = L − a = ${f2(B1)} m`,
+        `R_A = P·b/L = ${f2(P * B1 / L)} kN     R_B = P·a/L = ${f2(P * A1 / L)} kN`,
+        `M_maks = P·a·b/L = ${f2(P)}·${f2(A1)}·${f2(B1)}/${f2(L)} = ${f2(P * A1 * B1 / L)} kNm   under lasten`,
+        `w under lasten = P·a²·b²/(3·EI·L) = ${f2(P * A1 * A1 * B1 * B1 / (3 * EI * L) * 1e3)} mm`,
+        `w_maks = P·b'·(L² − b'²)^1,5/(9·√3·L·EI), b' = min(a, b) = ${f2(bs)} m:  ${f2(wm)} mm`],
+        [['R_A', P * B1 / L, N.R[0].V], ['M_maks', P * A1 * B1 / L, N.Mpos], ['w_maks', wm, N.wmax]]]; } },
+    '26': { need: 'L P a', build: v => { const A1 = Math.min(v.a, 0.5) * v.L; return { len: v.L, sups: [pin(0), pin(v.L)], pts: [{ x: A1, P: v.P }, { x: v.L - A1, P: v.P }], dist: [], span: v.L, div: 300 }; },
+      calc: ({ L, P, a }, N, EI) => { const A1 = Math.min(a, 0.5) * L, wm = P * A1 * (3 * L * L - 4 * A1 * A1) / (24 * EI) * 1e3; return [[
+        `To laster P i a = ${f2(A1)} m fra hvert opplegg`,
+        `R_A = R_B = P = ${f2(P)} kN`,
+        `M_maks = P·a = ${f2(P)}·${f2(A1)} = ${f2(P * A1)} kNm   konstant mellom lastene (V = 0 der)`,
+        `w_maks = P·a·(3L² − 4a²)/(24·EI) = ${f2(wm)} mm   midt i spennet`],
+        [['R_A', P, N.R[0].V], ['M_maks', P * A1, N.Mpos], ['w_maks', wm, N.wmax]]]; } },
+    '27': { need: 'L P P2 a a2', build: v => ({ len: v.L, sups: [pin(0), pin(v.L)], pts: [{ x: v.a * v.L, P: v.P }, { x: v.a2 * v.L, P: v.P2 }], dist: [], span: v.L, div: 300 }),
+      calc: ({ L, P, P2, a, a2 }, N, EI) => { const x1 = a * L, x2 = a2 * L, RA = (P * (L - x1) + P2 * (L - x2)) / L, RB = P + P2 - RA;
+        const Mx = x => RA * x - (x1 < x ? P * (x - x1) : 0) - (x2 < x ? P2 * (x - x2) : 0), M1 = Mx(x1), M2 = Mx(x2); return [[
+        `P₁ = ${f2(P)} kN i x₁ = ${f2(x1)} m,  P₂ = ${f2(P2)} kN i x₂ = ${f2(x2)} m`,
+        `R_A = [P₁·(L − x₁) + P₂·(L − x₂)]/L = [${f2(P)}·${f2(L - x1)} + ${f2(P2)}·${f2(L - x2)}]/${f2(L)} = ${f2(RA)} kN     R_B = ${f2(RB)} kN`,
+        `M under P₁ = ${f2(M1)} kNm     M under P₂ = ${f2(M2)} kNm     M_maks = ${f2(Math.max(M1, M2))} kNm`,
+        `w_maks beregnes numerisk (superposisjon av to tilfeller 25)`],
+        [['R_A', RA, N.R[0].V], ['R_B', RB, N.R[1].V], ['M_maks', Math.max(M1, M2), N.Mpos]]]; } },
+    '31': { need: 'L q', build: v => ({ len: v.L, sups: [fix(0)], pts: [], dist: [U(0, v.L, v.q)], span: v.L, div: 150 }),
+      calc: ({ L, q }, N, EI) => [[
+        `R_A = q·L = ${f2(q * L)} kN`,
+        `M_A = −q·L²/2 = −${f2(q)}·${f2(L)}²/2 = ${f2(-q * L * L / 2)} kNm   ved innspenningen, strekk i overkant`,
+        `w_maks = q·L⁴/(8·EI) = ${f2(q * L ** 4 / (8 * EI) * 1e3)} mm   ytterst`],
+        [['R_A', q * L, N.R[0].V], ['M_A', -q * L * L / 2, N.Mneg], ['w_maks', q * L ** 4 / (8 * EI) * 1e3, N.wmax]]] },
+    '32': { need: 'L P', build: v => ({ len: v.L, sups: [fix(0)], pts: [{ x: v.L, P: v.P }], dist: [], span: v.L, div: 150 }),
+      calc: ({ L, P }, N, EI) => [[
+        `R_A = P = ${f2(P)} kN`,
+        `M_A = −P·L = ${f2(-P * L)} kNm   ved innspenningen`,
+        `w_maks = P·L³/(3·EI) = ${f2(P * L ** 3 / (3 * EI) * 1e3)} mm     θ = P·L²/(2·EI) = ${f2(P * L * L / (2 * EI) * 1000, 2)} ‰ rad`],
+        [['R_A', P, N.R[0].V], ['M_A', -P * L, N.Mneg], ['w_maks', P * L ** 3 / (3 * EI) * 1e3, N.wmax]]] },
+    '33': { need: 'L P a', build: v => ({ len: v.L, sups: [fix(0)], pts: [{ x: v.a * v.L, P: v.P }], dist: [], span: v.L, div: 150 }),
+      calc: ({ L, P, a }, N, EI) => { const A1 = a * L, wt = P * A1 * A1 * (3 * L - A1) / (6 * EI) * 1e3; return [[
+        `Lasten står a = ${f2(A1)} m fra innspenningen`,
+        `R_A = P = ${f2(P)} kN     M_A = −P·a = ${f2(-P * A1)} kNm   (ytterdelen er uten moment)`,
+        `w under lasten = P·a³/(3·EI) = ${f2(P * A1 ** 3 / (3 * EI) * 1e3)} mm`,
+        `w ytterst = P·a²·(3L − a)/(6·EI) = ${f2(wt)} mm`],
+        [['R_A', P, N.R[0].V], ['M_A', -P * A1, N.Mneg], ['w ytterst', wt, N.wAt(L)]]]; } },
+    '41': { need: 'L q', build: v => ({ len: v.L, sups: [fix(0), pin(v.L)], pts: [], dist: [U(0, v.L, v.q)], span: v.L, div: 300 }),
+      calc: ({ L, q }, N, EI) => [[
+        `R_A = 5·q·L/8 = ${f2(5 * q * L / 8)} kN     R_B = 3·q·L/8 = ${f2(3 * q * L / 8)} kN`,
+        `M_A = −q·L²/8 = ${f2(-q * L * L / 8)} kNm   ved innspenningen`,
+        `M_felt = 9·q·L²/128 = ${f2(9 * q * L * L / 128)} kNm   ved x = 5L/8 = ${f2(5 * L / 8)} m`,
+        `w_maks = 0,005416·q·L⁴/EI ≈ q·L⁴/(185·EI) = ${f2(0.005416 * q * L ** 4 / EI * 1e3)} mm   ved x ≈ 0,579·L`],
+        [['R_A', 5 * q * L / 8, N.R[0].V], ['M_A', -q * L * L / 8, N.Mneg], ['M_felt', 9 * q * L * L / 128, N.Mpos], ['w_maks', 0.005416 * q * L ** 4 / EI * 1e3, N.wmax]]] },
+    '42': { need: 'L P a', build: v => ({ len: v.L, sups: [fix(0), pin(v.L)], pts: [{ x: v.a * v.L, P: v.P }], dist: [], span: v.L, div: 300 }),
+      calc: ({ L, P, a }, N, EI) => { const A1 = a * L, B1 = L - A1, RB = P * A1 * A1 * (3 * L - A1) / (2 * L ** 3), RA = P - RB, MA = -P * A1 * B1 * (L + B1) / (2 * L * L), MP = RB * B1; return [[
+        `a = ${f2(A1)} m fra innspenningen, b = ${f2(B1)} m`,
+        `R_B = P·a²·(3L − a)/(2L³) = ${f2(RB)} kN     R_A = P − R_B = ${f2(RA)} kN`,
+        `M_A = −P·a·b·(L + b)/(2L²) = ${f2(MA)} kNm     M under lasten = R_B·b = ${f2(MP)} kNm`,
+        `w_maks beregnes numerisk`],
+        [['R_A', RA, N.R[0].V], ['R_B', RB, N.R[1].V], ['M_A', MA, N.Mneg], ['M_P', MP, N.Mpos]]]; } },
+    '51': { need: 'L q c', build: v => ({ len: v.L + v.c, sups: [pin(0), pin(v.L)], pts: [], dist: [U(0, v.L + v.c, v.q)], span: v.L, div: 300 }),
+      calc: ({ L, q, c }, N, EI) => { const RA = q * (L * L - c * c) / (2 * L), RB = q * (L + c) ** 2 / (2 * L), Mf = RA > 0 ? RA * RA / (2 * q) : 0; return [[
+        `Spenn L = ${f2(L)} m, utkragning c = ${f2(c)} m`,
+        `R_A = q·(L² − c²)/(2L) = ${f2(RA)} kN     R_B = q·(L + c)²/(2L) = ${f2(RB)} kN`,
+        `M_B = −q·c²/2 = ${f2(-q * c * c / 2)} kNm   over opplegg B`,
+        `M_felt = R_A²/(2q) = ${f2(Mf)} kNm   ved x = R_A/q = ${f2(RA / q)} m`,
+        `w beregnes numerisk. Utkragningen reduserer momentet i feltet.`],
+        [['R_A', RA, N.R[0].V], ['R_B', RB, N.R[1].V], ['M_B', -q * c * c / 2, N.Mneg], ['M_felt', Mf, N.Mpos]]]; } },
+    '52': { need: 'L q c', build: v => ({ len: v.L + v.c, sups: [pin(0), pin(v.L)], pts: [], dist: [U(v.L, v.L + v.c, v.q)], span: v.c, div: 150 }),
+      calc: ({ L, q, c }, N, EI) => { const RA = -q * c * c / (2 * L), RB = q * c * (2 * L + c) / (2 * L), we = q * c ** 3 * (4 * L + 3 * c) / (24 * EI) * 1e3; return [[
+        `Last bare på utkragningen c = ${f2(c)} m`,
+        `R_A = −q·c²/(2L) = ${f2(RA)} kN   (nedover: A må forankres mot løft)     R_B = q·c·(2L + c)/(2L) = ${f2(RB)} kN`,
+        `M_B = −q·c²/2 = ${f2(-q * c * c / 2)} kNm   (lineært til 0 ved A)`,
+        `w ytterst = q·c³·(4L + 3c)/(24·EI) = ${f2(we)} mm   (spennet løftes ${f2(N.wup)} mm)`],
+        [['R_A', RA, N.R[0].V], ['R_B', RB, N.R[1].V], ['M_B', -q * c * c / 2, N.Mneg], ['w ytterst', we, N.wAt(L + c)]]]; } },
+    '61': { need: 'L q', build: v => ({ len: v.L, sups: [fix(0), fix(v.L)], pts: [], dist: [U(0, v.L, v.q)], span: v.L, div: 300 }),
+      calc: ({ L, q }, N, EI) => [[
+        `R_A = R_B = q·L/2 = ${f2(q * L / 2)} kN`,
+        `M_A = M_B = −q·L²/12 = ${f2(-q * L * L / 12)} kNm     M_midt = q·L²/24 = ${f2(q * L * L / 24)} kNm`,
+        `w_maks = q·L⁴/(384·EI) = ${f2(q * L ** 4 / (384 * EI) * 1e3)} mm   (en femdel av fritt opplagt)`],
+        [['R_A', q * L / 2, N.R[0].V], ['M_A', -q * L * L / 12, N.Mneg], ['M_midt', q * L * L / 24, N.Mpos], ['w_maks', q * L ** 4 / (384 * EI) * 1e3, N.wmax]]] },
+    '62': { need: 'L P a', build: v => ({ len: v.L, sups: [fix(0), fix(v.L)], pts: [{ x: v.a * v.L, P: v.P }], dist: [], span: v.L, div: 300 }),
+      calc: ({ L, P, a }, N, EI) => { const A1 = a * L, B1 = L - A1, MA = -P * A1 * B1 * B1 / L ** 2, MB = -P * A1 * A1 * B1 / L ** 2, RA = P * B1 * B1 * (3 * A1 + B1) / L ** 3, MP = 2 * P * A1 * A1 * B1 * B1 / L ** 3, wP = P * A1 ** 3 * B1 ** 3 / (3 * EI * L ** 3) * 1e3; return [[
+        `a = ${f2(A1)} m, b = ${f2(B1)} m`,
+        `R_A = P·b²·(3a + b)/L³ = ${f2(RA)} kN     R_B = P − R_A = ${f2(P - RA)} kN`,
+        `M_A = −P·a·b²/L² = ${f2(MA)} kNm     M_B = −P·a²·b/L² = ${f2(MB)} kNm`,
+        `M under lasten = 2·P·a²·b²/L³ = ${f2(MP)} kNm`,
+        `w under lasten = P·a³·b³/(3·EI·L³) = ${f2(wP)} mm`],
+        [['R_A', RA, N.R[0].V], ['M_min', Math.min(MA, MB), N.Mneg], ['M_P', MP, N.Mpos], ['w_P', wP, N.wAt(A1)]]]; } },
+    '71': { need: 'L q', build: v => ({ len: 2 * v.L, sups: [pin(0), pin(v.L), pin(2 * v.L)], pts: [], dist: [U(0, 2 * v.L, v.q)], span: v.L, div: 300 }),
+      calc: ({ L, q }, N, EI) => [[
+        `R_A = R_C = 3·q·L/8 = ${f2(3 * q * L / 8)} kN     R_B = 5·q·L/4 = ${f2(5 * q * L / 4)} kN`,
+        `M_B = −q·L²/8 = ${f2(-q * L * L / 8)} kNm   over midtopplegget`,
+        `M_felt = 9·q·L²/128 = ${f2(9 * q * L * L / 128)} kNm   ved x = 3L/8 = ${f2(3 * L / 8)} m`,
+        `w_maks = 0,005416·q·L⁴/EI ≈ q·L⁴/(185·EI) = ${f2(0.005416 * q * L ** 4 / EI * 1e3)} mm`],
+        [['R_A', 3 * q * L / 8, N.R[0].V], ['R_B', 5 * q * L / 4, N.R[1].V], ['M_B', -q * L * L / 8, N.Mneg], ['M_felt', 9 * q * L * L / 128, N.Mpos], ['w_maks', 0.005416 * q * L ** 4 / EI * 1e3, N.wmax]]] },
+    '72': { need: 'L q', build: v => ({ len: 2 * v.L, sups: [pin(0), pin(v.L), pin(2 * v.L)], pts: [], dist: [U(0, v.L, v.q)], span: v.L, div: 300 }),
+      calc: ({ L, q }, N, EI) => [[
+        `Last bare i felt A–B`,
+        `R_A = 7·q·L/16 = ${f2(7 * q * L / 16)} kN     R_B = 5·q·L/8 = ${f2(5 * q * L / 8)} kN     R_C = −q·L/16 = ${f2(-q * L / 16)} kN (nedover)`,
+        `M_B = −q·L²/16 = ${f2(-q * L * L / 16)} kNm`,
+        `M_felt = 49·q·L²/512 = ${f2(49 * q * L * L / 512)} kNm   ved x = 7L/16 = ${f2(7 * L / 16)} m`,
+        `w beregnes numerisk. Felt B–C løftes ${f2(N.wup)} mm.`],
+        [['R_A', 7 * q * L / 16, N.R[0].V], ['R_C', -q * L / 16, N.R[2].V], ['M_B', -q * L * L / 16, N.Mneg], ['M_felt', 49 * q * L * L / 512, N.Mpos]]] },
+    '73': { need: 'L P a', build: v => ({ len: 2 * v.L, sups: [pin(0), pin(v.L), pin(2 * v.L)], pts: [{ x: v.a * v.L, P: v.P }], dist: [], span: v.L, div: 300 }),
+      calc: ({ L, P, a }, N, EI) => { const A1 = a * L, B1 = L - A1, MB = -P * A1 * B1 * (L + A1) / (4 * L * L), RA = (P * B1 + MB) / L, RC = MB / L, RB = P - RA - RC; return [[
+        `Lasten i felt A–B, a = ${f2(A1)} m fra A, b = ${f2(B1)} m`,
+        `M_B = −P·a·b·(L + a)/(4L²) = ${f2(MB)} kNm   (tremomentlikningen)`,
+        `R_A = (P·b + M_B)/L = ${f2(RA)} kN     R_C = M_B/L = ${f2(RC)} kN     R_B = P − R_A − R_C = ${f2(RB)} kN`,
+        `M under lasten = R_A·a = ${f2(RA * A1)} kNm`],
+        [['R_A', RA, N.R[0].V], ['R_B', RB, N.R[1].V], ['M_B', MB, N.Mneg], ['M_P', RA * A1, N.Mpos]]]; } },
+    '74': { need: 'L P', build: v => ({ len: 2 * v.L, sups: [pin(0), pin(v.L), pin(2 * v.L)], pts: [{ x: v.L / 2, P: v.P }, { x: 1.5 * v.L, P: v.P }], dist: [], span: v.L, div: 300 }),
+      calc: ({ L, P }, N, EI) => [[
+        `R_A = R_C = 5·P/16 = ${f2(5 * P / 16)} kN     R_B = 11·P/8 = ${f2(11 * P / 8)} kN`,
+        `M_B = −3·P·L/16 = ${f2(-3 * P * L / 16)} kNm     M under lastene = 5·P·L/32 = ${f2(5 * P * L / 32)} kNm`,
+        `w under lastene = 7·P·L³/(768·EI) = ${f2(7 * P * L ** 3 / (768 * EI) * 1e3)} mm`],
+        [['R_A', 5 * P / 16, N.R[0].V], ['R_B', 11 * P / 8, N.R[1].V], ['M_B', -3 * P * L / 16, N.Mneg], ['M_P', 5 * P * L / 32, N.Mpos], ['w_P', 7 * P * L ** 3 / (768 * EI) * 1e3, N.wAt(L / 2)]]] },
+    '81': { need: 'L L2 q', build: v => ({ len: v.L + v.L2, sups: [pin(0), pin(v.L), pin(v.L + v.L2)], pts: [], dist: [U(0, v.L + v.L2, v.q)], span: Math.max(v.L, v.L2), div: 300 }),
+      calc: ({ L, L2, q }, N, EI) => { const MB = -q * (L ** 3 + L2 ** 3) / (8 * (L + L2)), RA = q * L / 2 + MB / L, RC = q * L2 / 2 + MB / L2, RB = q * (L + L2) - RA - RC, Mf1 = RA > 0 ? RA * RA / (2 * q) : 0, Mf2 = RC > 0 ? RC * RC / (2 * q) : 0, Mf = Math.max(Mf1, Mf2); return [[
+        `L₁ = ${f2(L)} m, L₂ = ${f2(L2)} m`,
+        `M_B = −q·(L₁³ + L₂³)/(8·(L₁ + L₂)) = −${f2(q)}·(${f2(L ** 3)} + ${f2(L2 ** 3)})/(8·${f2(L + L2)}) = ${f2(MB)} kNm`,
+        `R_A = q·L₁/2 + M_B/L₁ = ${f2(RA)} kN     R_C = q·L₂/2 + M_B/L₂ = ${f2(RC)} kN     R_B = q·(L₁ + L₂) − R_A − R_C = ${f2(RB)} kN`,
+        `M_felt = R²/(2q) når R > 0:  felt 1 ${RA > 0 ? f2(Mf1) : 'ingen positivt moment (R_A ≤ 0)'}, felt 2 ${RC > 0 ? f2(Mf2) : 'ingen positivt moment (R_C ≤ 0)'} kNm`],
+        [['R_A', RA, N.R[0].V], ['R_B', RB, N.R[1].V], ['M_B', MB, N.Mneg], ['M_felt', Mf, N.Mpos]]]; } },
+    '82': { need: 'L L2 P', build: v => ({ len: v.L + v.L2, sups: [pin(0), pin(v.L), pin(v.L + v.L2)], pts: [{ x: v.L / 2, P: v.P }, { x: v.L + v.L2 / 2, P: v.P }], dist: [], span: Math.max(v.L, v.L2), div: 300 }),
+      calc: ({ L, L2, P }, N, EI) => { const MB = -3 * P * (L * L + L2 * L2) / (16 * (L + L2)), RA = P / 2 + MB / L, RC = P / 2 + MB / L2, RB = 2 * P - RA - RC, M1 = RA * L / 2, M2 = RC * L2 / 2, MPm = Math.max(M1, M2, 0); return [[
+        `L₁ = ${f2(L)} m, L₂ = ${f2(L2)} m, P midt i hvert felt`,
+        `M_B = −3·P·(L₁² + L₂²)/(16·(L₁ + L₂)) = ${f2(MB)} kNm`,
+        `R_A = P/2 + M_B/L₁ = ${f2(RA)} kN     R_C = P/2 + M_B/L₂ = ${f2(RC)} kN     R_B = 2P − R_A − R_C = ${f2(RB)} kN`,
+        `M under lastene: felt 1 = R_A·L₁/2 = ${f2(M1)}, felt 2 = R_C·L₂/2 = ${f2(M2)} kNm`],
+        [['R_A', RA, N.R[0].V], ['R_B', RB, N.R[1].V], ['M_B', MB, N.Mneg], ['M_P', MPm, N.Mpos]]]; } }
+  };
+  const f2 = (v, d = 2) => n(v, d), f0 = v => n(v, 0);
+  let btLast = null;
+  function btab() {
+    const id = $('bt-case').value, cs = BT[id], need = cs.need.split(' ');
+    document.querySelectorAll('#tabell [data-need]').forEach(el => { el.hidden = !need.includes(el.dataset.need); });
+    const v = { L: +$('bt-L').value, L2: +$('bt-L2').value, c: +$('bt-c').value, q: +$('bt-q').value, P: +$('bt-P').value, P2: +$('bt-P2').value, a: +$('bt-a').value, a2: +$('bt-a2').value };
+    const grp = id[0];
+    $('bt-L-lab').textContent = grp === '7' ? 'Spenn L (hvert felt)' : grp === '8' ? 'Spenn L₁' : grp === '5' ? 'Spenn L (A–B)' : 'Lengde L';
+    $('bt-c-lab').textContent = grp === '5' ? 'Utkragning c' : 'Lastlengde c';
+    $('bt-a-lab').textContent = id === '27' ? 'Posisjon P₁' : 'Posisjon a';
+    const spanA = grp === '7' || grp === '8' ? v.L : v.L;
+    $('bt-L-o').textContent = n(v.L, 1) + ' m'; $('bt-L2-o').textContent = n(v.L2, 1) + ' m'; $('bt-c-o').textContent = n(v.c, 1) + ' m';
+    $('bt-q-o').textContent = n(v.q, 1) + ' kN/m'; $('bt-P-o').textContent = n(v.P, 1) + ' kN'; $('bt-P2-o').textContent = n(v.P2, 1) + ' kN';
+    $('bt-a-o').textContent = n((id === '26' ? Math.min(v.a, 0.5) : v.a) * spanA, 2) + ' m'; $('bt-a2-o').textContent = n(v.a2 * spanA, 2) + ' m';
+    const [sb, sh, Em] = BT_SEC[$('bt-s').value], I = sb * sh ** 3 / 12, W = sb * sh * sh / 6, EI = Em * 1e3 * I * 1e-12; // kNm²
+    const sys = cs.build(v), N = beamFE(sys.len, sys.sups, sys.pts, sys.dist, EI);
+    const [lines, checks] = cs.calc(v, N, EI);
+
+    // Tegning
+    const x0 = 70, x1 = 570, X = x => x0 + x / sys.len * (x1 - x0), by = 128;
+    const wAbs = Math.max(N.wmax, N.wup, 1e-9), sd = 26 / wAbs;
+    let s = '';
+    // Laster
+    const qmax = Math.max(...sys.dist.map(d => Math.max(d.q1, d.q2)), 1e-9);
+    sys.dist.forEach(d => {
+      const m = Math.max(2, Math.round((X(d.b) - X(d.a)) / 18)), top = [];
+      for (let i = 0; i <= m; i++) { const x = d.a + (d.b - d.a) * i / m, q = d.q1 + (d.q2 - d.q1) * i / m, hgt = 8 + 32 * q / qmax; top.push([X(x), by - 10 - hgt]); if (q > 1e-9) s += arrow(X(x), by - 10 - hgt, X(x), by - 9, C.b, 1.2); }
+      s += path(top, C.b, 1.5);
+      s += txt((X(d.a) + X(d.b)) / 2, by - 56, 'q = ' + n(Math.max(d.q1, d.q2), 1) + ' kN/m', { a: 'middle', c: C.b, s: 11 });
+    });
+    sys.pts.forEach((p, i) => { s += arrow(X(p.x), by - 62, X(p.x), by - 9, C.a, 3) + txt(X(p.x) + 6, by - 52 + (i % 2) * 0, (sys.pts.length > 1 ? 'P' + (id === '27' ? ['₁', '₂'][i] : '') + ' = ' : 'P = ') + n(p.P, 1), { c: C.a, s: 11 }); });
+    // Udeformert og deformert bjelke
+    s += line(X(0), by, X(sys.len), by, C.ln, 1, '4 4');
+    s += path(N.xs.map((x, i) => [X(x), by + N.wn[i] * sd]), C.wood, 6);
+    // Opplegg
+    let pinned = false;
+    sys.sups.forEach((sp, i) => {
+      const x = X(sp.x);
+      if (sp.t === 'fix') {
+        const left = sp.x < sys.len / 2, xw = left ? x - 16 : x;
+        s += `<rect x="${xw}" y="${by - 44}" width="16" height="88" fill="#252b30" stroke="${C.fg}" stroke-width="1.2"/>`;
+        for (let yy = by - 40; yy < by + 40; yy += 10) s += line(left ? x - 16 : x + 16, yy + 8, left ? x - 6 : x + 6, yy, C.mu, 0.8);
+      } else {
+        s += `<polygon points="${x},${by + 5} ${x - 10},${by + 22} ${x + 10},${by + 22}" fill="none" stroke="${C.fg}" stroke-width="1.5"/>`;
+        s += pinned ? line(x - 12, by + 26, x + 12, by + 26, C.fg, 1.5) : '';
+        pinned = true;
+      }
+      const lab = 'ABC'[i], R = N.R[i];
+      s += txt(x + (sp.t === 'fix' ? (sp.x < sys.len / 2 ? -26 : 26) : -14), by + (sp.t === 'fix' ? 4 : 18), lab, { a: 'middle', c: C.b, s: 13, w: 600 });
+      const xr = sp.t === 'fix' ? x + (sp.x < sys.len / 2 ? 16 : -16) : x;
+      s += R.V >= 0 ? arrow(xr, by + 72, xr, by + 32, C.g, 2.2) : arrow(xr, by + 32, xr, by + 72, C.g, 2.2);
+      s += txt(xr + 5, by + 70, n(R.V, 2), { c: C.g, s: 11 });
+      if (sp.t === 'fix') s += txt(xr, by - 50, 'M = ' + n(-R.C * (sp.x < sys.len / 2 ? 1 : -1), 2), { a: sp.x < sys.len / 2 ? 'start' : 'end', c: C.g, s: 11 });
+    });
+    s += txt(X(N.xw), by + N.wmax * sd + (N.wmax > 0 ? 22 : -8) + 0, N.wmax > 0.005 ? 'w = ' + n(N.wmax, 2) + ' mm' : '', { a: 'middle', c: C.fg, s: 11 });
+    s += txt(x1, 18, 'deformasjon forstørret', { a: 'end', s: 10 });
+    // V og M
+    const yV = 268, yM = 392, sv = 34 / Math.max(N.Vabs, 1e-9), MA2 = Math.max(N.Mpos, -N.Mneg, 1e-9), sm = 55 / MA2;
+    s += txt(8, yV + 4, 'V (kN)', { s: 11 }) + line(X(0), yV, X(sys.len), yV, C.mu);
+    s += path([[X(0), yV], ...N.gx.map((x, i) => [X(x), yV - N.gv[i][0] * sv]), [X(sys.len), yV]], C.b, 1.4, null, C.b, 0.28);
+    let iv = 0; N.gv.forEach((g, i) => { if (Math.abs(g[0]) > Math.abs(N.gv[iv][0])) iv = i; });
+    s += txt(X(N.gx[iv]), yV - N.gv[iv][0] * sv + (N.gv[iv][0] > 0 ? -6 : 14), (N.gv[iv][0] > 0 ? '+' : '') + n(N.gv[iv][0], 2), { a: N.gx[iv] < sys.len / 2 ? 'start' : 'end', c: C.fg, s: 11 });
+    s += txt(8, yM + 4, 'M (kNm)', { s: 11 }) + line(X(0), yM, X(sys.len), yM, C.mu);
+    s += path([[X(0), yM], ...N.gx.map((x, i) => [X(x), yM + N.gv[i][1] * sm]), [X(sys.len), yM]], C.a, 1.6, null, C.a, 0.28);
+    const mlab = (x, M) => Math.abs(M) < 0.005 ? '' : txt(Math.min(Math.max(X(x), X(0) + 18), X(sys.len) - 18), yM + M * sm + (M > 0 ? 15 : -7), (M > 0 ? '+' : '') + n(M, 2), { a: 'middle', c: C.fg, s: 11 });
+    s += mlab(N.xPos, N.Mpos) + mlab(N.xNeg, N.Mneg);
+    s += txt(x1, 466, 'M tegnet på strekksiden', { a: 'end', s: 10 });
+    $('bt-svg').innerHTML = s;
+
+    // Utregning
+    const Mabs = Math.max(N.Mpos, -N.Mneg), sig = Mabs * 1e6 / W, lim = sys.span * 1000 / sys.div;
+    const ok = (a2, b2) => Math.abs(a2 - b2) <= Math.max(0.005 * Math.abs(a2), 0.01);
+    const allOk = checks.every(([, a2, b2]) => ok(a2, b2));
+    $('bt-calc').textContent = lines.join('\n') + `
+EI = E·I = ${n(Em, 0)}·${n(I, 0)} mm⁴ = ${n(EI, 0)} kNm²     W = ${n(W, 0)} mm³
+σ_maks = |M|_maks/W = ${n(Mabs, 2)}·10⁶/${n(W, 0)} = ${n(sig, 2)} MPa   (referanse f_m,k = ${Em > 12000 ? '30' : '24'} MPa: ${n(sig / (Em > 12000 ? 30 : 24) * 100, 0)} %)
+w_maks = ${n(N.wmax, 2)} mm   krav ${grp === '3' || id === '52' ? (grp === '3' ? 'L' : 'c') + '/150' : 'L/300'} = ${n(lim, 2)} mm  → ${n(N.wmax / lim * 100, 0)} %
+Kontroll mot FEM (${N.ne} elementer):  ${checks.map(([k2, a2, b2]) => `${k2} ${n(a2, 2)}/${n(b2, 2)} ${ok(a2, b2) ? '✓' : '✗'}`).join('  ·  ')}`;
+    btLast = { id, allOk, checks };
+  }
+  bind(['bt-case', 'bt-L', 'bt-L2', 'bt-c', 'bt-q', 'bt-P', 'bt-P2', 'bt-a', 'bt-a2', 'bt-s'], btab);
+  window.__btCheck = () => Object.keys(BT).map(k => { $('bt-case').value = k; btab(); return [k, btLast.allOk, btLast.checks.map(c => c[0] + ':' + n(c[1], 3) + '/' + n(c[2], 3)).join(' ')]; });
+
+  // ---------- Animasjonssløyfe (bare synlige moduler tegnes) ----------
+  const visible = { knekk: true, punktlast: true, mohr: true, super: true, bjelke: true, ubestemt: true, bro: true };
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => { visible[e.target.id] = e.isIntersecting; }));
+    ['knekk', 'punktlast', 'mohr', 'super', 'bjelke', 'ubestemt', 'bro'].forEach(id => io.observe($(id)));
+  }
+  let last = null;
+  function loop(t) {
+    const dt = last === null ? 0 : Math.min(0.1, (t - last) / 1000); last = t;
+    if (!reduce && visible.knekk) { kPhase += dt * 2.2; knekk(); }
+    if (pAuto) {
+      let r = +$('p-a').value + pDir * dt * 0.16;
+      if (r > 1) { r = 1; pDir = -1; } if (r < 0) { r = 0; pDir = 1; }
+      $('p-a').value = r; if (visible.punktlast) punkt();
+    }
+    if (mAuto) { mTheta = (mTheta + dt * 22) % 180; $('m-th').value = mTheta; if (visible.mohr) mohr(); }
+    if (wAuto) {
+      let r = +$('w-x').value + wDir * dt * 0.11;
+      if (r > 1) { r = 1; wDir = -1; } if (r < 0) { r = 0; wDir = 1; }
+      $('w-x').value = r; if (visible.bro) bro();
+    }
+    if (xTw < 1) { xTw = Math.min(1, xTw + dt / 0.9); if (visible.ubestemt) ubestemt(); }
+    if (eAuto) {
+      eT = (eT + dt) % 5;
+      const e = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+      eAnim = eT < 1.6 ? e(eT / 1.6) : eT < 3.6 ? 1 : eT < 4.4 ? 1 - e((eT - 3.6) / 0.8) : 0;
+      if (visible.bjelke) bjelke();
+    }
+    if (uAuto) {
+      uT = (uT + dt) % 9;
+      const e = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+      $('u-m').value = uT < 2.5 ? 0 : uT < 4.5 ? e((uT - 2.5) / 2) : uT < 7.5 ? 1 : 1 - e((uT - 7.5) / 1.5);
+      if (visible.super) superpos();
+    }
+    requestAnimationFrame(loop);
+  }
+  setPAuto(pAuto); setMAuto(mAuto); setUAuto(uAuto); setEAuto(eAuto); setWAuto(wAuto);
+  fiber(); bolt(); knekk(); tvers(); steiner(); nedb(); punkt(); bjelke(); ubestemt(); btab(); superpos(); stag(); knute(); strekk(); bro(); mohr();
+  requestAnimationFrame(loop);
+})();
+</script>
+<script>
+(() => {
+  const cv = document.getElementById('sc-canvas');
+  const ctx = cv.getContext('2d');
+  const playBtn = document.getElementById('sc-play');
+  const speedIn = document.getElementById('sc-speed');
+  const stepEl = document.getElementById('sc-step'), timeIn = document.getElementById('sc-time');
+  const TAU = Math.PI * 2;
+  const COL = { sin: '#e9b45c', cos: '#3fa9d6', white: '#f2f2f0', axis: 'rgba(235,235,230,0.55)' };
+  const fmt = n => n.toFixed(3).replace('.', ',').replace('-0,000', '0,000');
+
+  // Scene (y opp). Sirkel i planet x = 0, radius 1. Tidsakse langs +x.
+  const L = 3 * Math.PI;          // synlig lengde av kurvene (1,5 perioder)
+  const ZB = -1.9;                // bakvegg
+  const YF = -1.9;                // gulv
+  const XW = -0.9;                // venstre vegg
+
+  // Kamera
+  const eye = [10.5, 3.4, 9.5], target = [3.6, -0.6, -0.4], upv = [0, 1, 0];
+  const sub = (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+  const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+  const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  const norm = a => { const l = Math.hypot(...a); return [a[0]/l, a[1]/l, a[2]/l]; };
+  const f = norm(sub(target, eye)), r = norm(cross(f, upv)), u = cross(r, f);
+
+  let W = 0, H = 0, dpr = 1, focal = 1, ox = 0, oy = 0;
+  function P(p) {
+    const d = sub(p, eye);
+    const z = dot(d, f);
+    return [ox + focal * dot(d, r) / z, oy - focal * dot(d, u) / z];
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    focal = W * 1.55; ox = W * 0.5; oy = H * 0.47;
+  }
+  new ResizeObserver(() => { resize(); draw(); }).observe(cv);
+
+  const path = (pts, close) => { ctx.beginPath(); pts.forEach((p, i) => { const s = P(p); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); if (close) ctx.closePath(); };
+  const quad = (pts, fill) => { path(pts, true); ctx.fillStyle = fill; ctx.fill(); };
+
+
+  function draw3D(theta) {
+    const lw = W / 360;
+
+    // Rommet: bakvegg, venstre vegg, gulv
+    const top = 9, far = L + 6, near = 7.5;
+    let g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, '#2b3034'); g.addColorStop(1, '#15181b');
+    quad([[XW, YF, ZB], [far, YF, ZB], [far, top, ZB], [XW, top, ZB]], g);
+    quad([[XW, YF, ZB], [XW, top, ZB], [XW, top, near], [XW, YF, near]], '#1d2124');
+    g = ctx.createLinearGradient(0, H * 0.4, 0, H);
+    g.addColorStop(0, '#22272a'); g.addColorStop(1, '#0f1113');
+    quad([[XW, YF, ZB], [far, YF, ZB], [far, YF, near], [XW, YF, near]], g);
+    // Hjørnelinjer
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = lw;
+    path([[XW, YF, near], [XW, YF, ZB], [far, YF, ZB]]); ctx.stroke();
+    path([[XW, YF, ZB], [XW, top, ZB]]); ctx.stroke();
+
+    const len = Math.min(theta, L);
+    const N = Math.max(2, Math.round(len / L * 240));
+    const ph = x => theta - x;
+
+    // Aksene (tidsakser på vegg og gulv, og sirkelens akse)
+    ctx.strokeStyle = COL.axis; ctx.lineWidth = lw;
+    path([[0, 0, ZB], [far, 0, ZB]]); ctx.stroke();
+    path([[0, YF, 0], [far, YF, 0]]); ctx.stroke();
+    path([[-0.4, 0, 0], [L + 2, 0, 0]]); ctx.stroke();
+
+    // Cos på gulvet: blå flate + prikket kant
+    if (len > 0) {
+      const pts = [];
+      for (let i = 0; i <= N; i++) { const x = i / N * len; pts.push([x, YF, Math.cos(ph(x))]); }
+      path([[0, YF, 0], ...pts, [len, YF, 0]], true);
+      ctx.fillStyle = 'rgba(63,169,214,0.45)'; ctx.fill();
+      ctx.setLineDash([lw * 1.2, lw * 2.6]); ctx.lineCap = 'round';
+      ctx.strokeStyle = COL.white; ctx.lineWidth = lw * 1.6;
+      path(pts); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // Sin på veggen: gule skraveringsstreker + kurve
+    if (len > 0) {
+      ctx.strokeStyle = COL.sin; ctx.lineWidth = lw * 0.9;
+      const step = 0.09;
+      ctx.beginPath();
+      for (let x = 0; x <= len; x += step) {
+        const a = P([x, 0, ZB]), b = P([x, Math.sin(ph(x)), ZB]);
+        ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      }
+      ctx.stroke();
+      const pts = [];
+      for (let i = 0; i <= N; i++) { const x = i / N * len; pts.push([x, Math.sin(ph(x)), ZB]); }
+      ctx.lineWidth = lw * 1.8; path(pts); ctx.stroke();
+    }
+
+    // Enhetssirkelen i planet x = 0
+    const circ = [];
+    for (let i = 0; i <= 96; i++) { const t = i / 96 * TAU; circ.push([0, Math.sin(t), Math.cos(t)]); }
+    ctx.strokeStyle = COL.white; ctx.lineWidth = lw * 1.8; path(circ); ctx.stroke();
+    ctx.strokeStyle = COL.axis; ctx.lineWidth = lw;
+    path([[0, -1.25, 0], [0, 1.25, 0]]); ctx.stroke();
+    path([[0, 0, -1.25], [0, 0, 1.25]]); ctx.stroke();
+
+    // Punktet og projeksjonene
+    const s = Math.sin(theta), c = Math.cos(theta);
+    const Pt = [0, s, c];
+    ctx.lineWidth = lw * 1.4; ctx.strokeStyle = COL.white;
+    path([[0, 0, 0], Pt]); ctx.stroke();
+    ctx.setLineDash([lw * 3, lw * 3]); ctx.lineWidth = lw;
+    ctx.strokeStyle = COL.sin; path([Pt, [0, s, ZB]]); ctx.stroke();
+    ctx.strokeStyle = COL.cos; path([Pt, [0, YF, c]]); ctx.stroke();
+    ctx.setLineDash([]);
+    const dotAt = (p, col, rad) => { const q = P(p); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(q[0], q[1], rad, 0, TAU); ctx.fill(); };
+    dotAt([0, s, ZB], COL.sin, lw * 3.2);
+    dotAt([0, YF, c], COL.cos, lw * 3.2);
+    dotAt(Pt, '#ffffff', lw * 4);
+
+    // Etiketter
+    ctx.font = `600 ${W * 0.06}px "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = W * 0.02;
+    ctx.fillStyle = COL.white;
+    let q = P([L * 0.55, 2.15, ZB]); ctx.fillText('f(x) = Sin(x)', q[0], q[1]);
+    q = P([L * 0.45, YF, 2.6]); ctx.fillText('f(x) = Cos(x)', q[0], q[1]);
+    ctx.shadowBlur = 0;
+
+  }
+
+  // ---------- Del 2: sin² + cos² = 1 ----------
+  // Tidslinje i sekunder (ved fart 1)
+  const T = { spinEnd: 9.2, fadeIn: 10, grow: 15, hold: 16, merge: 19.5, end: 26 };
+  const clamp = x => Math.max(0, Math.min(1, x));
+  const ease = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+  const RED = '#ee5a6f', GREEN = '#b5dc4c';
+  const MATH = 'italic 500 {s}px "STIX Two Text", Georgia, "Times New Roman", serif';
+
+  function draw2D(t, alpha) {
+    const cell = W / 11.6, x0 = cell * 0.8, y0 = H * 0.56;
+    const X = x => x0 + x * cell, Y = y => y0 - y * cell;
+    const lw = W / 360;
+    ctx.globalAlpha = alpha;
+    // Rutenett og akser
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = lw;
+    ctx.beginPath();
+    for (let i = -1; i <= 11; i++) { ctx.moveTo(X(i), 0); ctx.lineTo(X(i), H); }
+    const jMin = Math.ceil(-(H - y0) / cell), jMax = Math.floor(y0 / cell);
+    for (let j = jMin; j <= jMax; j++) { ctx.moveTo(0, Y(j)); ctx.lineTo(W, Y(j)); }
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = lw * 1.4;
+    ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(W, Y(0)); ctx.moveTo(X(0), 0); ctx.lineTo(X(0), H); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = `${W * 0.026}px "IBM Plex Mono", monospace`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let i = 1; i <= 10; i++) ctx.fillText(i, X(i), Y(0) + 4);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let j = jMin + 1; j < jMax; j++) if (j) ctx.fillText(j, X(0) - 5, Y(j));
+
+    // Kurvene vokser fram fra venstre
+    const xmax = 10.3 * clamp((t - T.fadeIn) / (T.grow - T.fadeIn));
+    const m = ease((t - T.hold) / (T.merge - T.hold));   // 0 = adskilt, 1 = satt sammen
+    const step = 0.07;
+    const greenLo = x => { const c2 = Math.cos(x) ** 2; return 2 + (1 - c2 - 2) * m; };
+    const greenHi = x => { const c2 = Math.cos(x) ** 2; return 2 + c2 + (1 - (2 + c2)) * m; };
+    ctx.lineWidth = Math.max(1, cell * step * 0.5);
+    ctx.strokeStyle = RED; ctx.beginPath();
+    for (let x = 0; x <= xmax; x += step) { ctx.moveTo(X(x), Y(0)); ctx.lineTo(X(x), Y(Math.sin(x) ** 2)); }
+    ctx.stroke();
+    ctx.strokeStyle = GREEN; ctx.beginPath();
+    for (let x = 0; x <= xmax; x += step) { ctx.moveTo(X(x), Y(greenLo(x))); ctx.lineTo(X(x), Y(greenHi(x))); }
+    ctx.stroke();
+    // Konturer
+    const curve = (fn, col) => {
+      ctx.strokeStyle = col; ctx.lineWidth = lw * 1.6; ctx.beginPath();
+      for (let x = 0; x <= xmax; x += 0.03) { const y = Y(fn(x)); x ? ctx.lineTo(X(x), y) : ctx.moveTo(X(x), y); }
+      ctx.stroke();
+    };
+    if (xmax > 0) { curve(x => Math.sin(x) ** 2, RED); curve(greenHi, GREEN); curve(greenLo, GREEN); }
+
+    // Linjen y = 1 og likningen
+    const fin = ease((t - T.merge) / 1.2);
+    if (fin > 0) {
+      ctx.globalAlpha = alpha * fin;
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = lw * 2.4;
+      ctx.beginPath(); ctx.moveTo(X(0), Y(1)); ctx.lineTo(X(10.3), Y(1)); ctx.stroke();
+      ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = MATH.replace('{s}', W * 0.075);
+      ctx.fillText('sin²(x) + cos²(x) = 1', W / 2, Y(3.4));
+      ctx.font = `${W * 0.03}px "IBM Plex Mono", monospace`; ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.textAlign = 'left'; ctx.fillText('y = 1', X(10.3) - cell * 1.2, Y(1) - cell * 0.4);
+    }
+    // Etiketter (forsvinner når likningen kommer)
+    const la = alpha * (1 - fin) * clamp((t - T.fadeIn) / 1);
+    if (la > 0) {
+      ctx.globalAlpha = la; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.font = MATH.replace('{s}', W * 0.062);
+      ctx.fillStyle = GREEN; ctx.fillText('f(x) = cos²(x)', X(0) + cell * 0.3, Y(4.4));
+      ctx.fillStyle = RED;   ctx.fillText('f(x) = sin²(x)', X(0) + cell * 0.3, Y(-1.7));
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  let t = 0, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, last = null;
+
+  function draw() {
+    if (!W) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalAlpha = 1; ctx.fillStyle = '#0b0d0f'; ctx.fillRect(0, 0, W, H);
+    const a3 = 1 - ease((t - (T.spinEnd - 0.6)) / 0.6);
+    const a2 = ease((t - T.spinEnd) / (T.fadeIn - T.spinEnd));
+    if (a3 > 0) { ctx.globalAlpha = a3; draw3D(Math.min(t, T.spinEnd) * 1.25); ctx.globalAlpha = 1; }
+    if (a2 > 0) draw2D(t, a2);
+    stepEl.textContent =
+      t < T.spinEnd ? 'Del 1: sirkelen tegner sin x og cos x' :
+      t < T.hold    ? 'Del 2: begge kurvene kvadreres: sin²(x) og cos²(x)' :
+      t < T.merge   ? 'Del 3: cos²(x) snus og legges oppå sin²(x)' :
+                      'Resultat: sin²(x) + cos²(x) = 1';
+    if (document.activeElement !== timeIn) timeIn.value = t.toFixed(2);
+  }
+
+  function frame(now) {
+    if (last !== null && playing) { t += (now - last) / 1000 * parseFloat(speedIn.value); if (t > T.end) t = 0; }
+    last = now; draw(); requestAnimationFrame(frame);
+  }
+  function setPlaying(p) { playing = p; playBtn.textContent = p ? 'Pause' : 'Spill av'; }
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+  document.getElementById('sc-reset').addEventListener('click', () => { t = 0; setPlaying(true); });
+  timeIn.addEventListener('input', () => { setPlaying(false); t = +timeIn.value; draw(); });
+
+  // ---------- Skrå sperre ----------
+  const bA = document.getElementById('b-a'), bL = document.getElementById('b-l'), bQ = document.getElementById('b-q');
+  const svg = document.getElementById('beam'), calc = document.getElementById('b-calc');
+  const n = (v, d = 2) => v.toFixed(d).replace('.', ',');
+  const arrow = (x1, y1, x2, y2, col, w) => {
+    const a = Math.atan2(y2 - y1, x2 - x1), h = 9, len = Math.hypot(x2 - x1, y2 - y1);
+    if (len < 2) return '';
+    const hx = x2 - h * Math.cos(a), hy = y2 - h * Math.sin(a);
+    return `<line x1="${x1}" y1="${y1}" x2="${hx}" y2="${hy}" stroke="${col}" stroke-width="${w}"/>` +
+      `<polygon fill="${col}" points="${x2},${y2} ${hx + 4.5 * Math.sin(a)},${hy - 4.5 * Math.cos(a)} ${hx - 4.5 * Math.sin(a)},${hy + 4.5 * Math.cos(a)}"/>`;
+  };
+
+  function drawBeam() {
+    const deg = +bA.value, a = deg * Math.PI / 180, lh = +bL.value, q = +bQ.value;
+    document.getElementById('b-a-o').textContent = deg + '°';
+    document.getElementById('b-l-o').textContent = n(lh, 1) + ' m';
+    document.getElementById('b-q-o').textContent = n(q, 1) + ' kN/m';
+    const ca = Math.cos(a), sa = Math.sin(a);
+
+    // Geometri i SVG: fast tegnet bjelkelengde
+    const Lp = 355, fx = 70, fy = 360;
+    const tx = fx + Lp * ca, ty = fy - Lp * sa;
+    const mx = (fx + tx) / 2 + 16 * Math.sin(deg * Math.PI / 180), my = (fy + ty) / 2 + 16 * Math.cos(deg * Math.PI / 180);   // kraftdiagram litt under bjelken
+    let s = '';
+    // Hjelpelinjer: horisontal og vinkel ved foten
+    s += `<line x1="${fx - 20}" y1="${fy}" x2="${fx + 420}" y2="${fy}" stroke="#3a4248" stroke-dasharray="4 4"/>`;
+    if (deg > 0) {
+      const r = 46;
+      s += `<path d="M ${fx + r} ${fy} A ${r} ${r} 0 0 0 ${fx + r * ca} ${fy - r * sa}" fill="none" stroke="#9aa3ab"/>`;
+      s += `<text x="${fx + 56 * Math.cos(a / 2)}" y="${fy - 56 * Math.sin(a / 2) + 4}" fill="#9aa3ab" font-size="14" font-family="IBM Plex Mono, monospace">α</text>`;
+    }
+    // Fordelt vertikal last over bjelken
+    for (let i = 0; i <= 10; i++) {
+      const px = fx + (i / 10) * Lp * ca, py = fy - (i / 10) * Lp * sa;
+      s += arrow(px, py - 46, px, py - 6, '#6b747c', 1.4);
+    }
+    s += `<line x1="${fx}" y1="${fy - 46}" x2="${tx}" y2="${ty - 46}" stroke="#6b747c" stroke-width="1.4"/>`;
+    // Bjelken
+    s += `<line x1="${fx}" y1="${fy}" x2="${tx}" y2="${ty}" stroke="#d8c3a0" stroke-width="12" stroke-linecap="butt"/>`;
+    // Opplegg
+    const sup = (x, y) => `<polygon points="${x},${y + 6} ${x - 11},${y + 26} ${x + 11},${y + 26}" fill="none" stroke="#e8eaec" stroke-width="1.6"/>`;
+    s += sup(fx, fy) + sup(tx, ty);
+
+    // Dekomponering i midtpunktet: F loddrett = F⊥ (cos) + F∥ (sin)
+    const F = 95;
+    const nx = mx + F * ca * sa, ny = my + F * ca * ca;      // vinkelrett på bjelken
+    const px2 = mx - F * sa * ca, py2 = my + F * sa * sa;    // langs bjelken, nedover
+    s += `<line x1="${nx}" y1="${ny}" x2="${mx}" y2="${my + F}" stroke="#4a535a" stroke-dasharray="4 4"/>`;
+    s += `<line x1="${px2}" y1="${py2}" x2="${mx}" y2="${my + F}" stroke="#4a535a" stroke-dasharray="4 4"/>`;
+    s += arrow(mx, my, mx, my + F, '#f2f2f0', 2.4);
+    s += arrow(mx, my, nx, ny, '#3fa9d6', 3);
+    s += arrow(mx, my, px2, py2, '#e9b45c', 3);
+    if (deg > 2) {
+      const r = 34, a0 = Math.PI / 2, a1 = Math.PI / 2 - a;
+      s += `<path d="M ${mx + r * Math.cos(a0)} ${my + r * Math.sin(a0)} A ${r} ${r} 0 0 0 ${mx + r * Math.cos(a1)} ${my + r * Math.sin(a1)}" fill="none" stroke="#9aa3ab"/>`;
+    }
+    const lab = (x, y, t, col, anchor = 'start') => `<text x="${x}" y="${y}" fill="${col}" font-size="14" font-family="IBM Plex Mono, monospace" text-anchor="${anchor}">${t}</text>`;
+    // Forklaring øverst til høyre
+    [['#f2f2f0', 'q  loddrett last'], ['#3fa9d6', 'q·cos α  vinkelrett → bøyning'], ['#e9b45c', 'q·sin α  langs → trykk']]
+      .forEach(([col, t], i) => { const y = 26 + i * 24; s += `<line x1="300" y1="${y - 5}" x2="326" y2="${y - 5}" stroke="${col}" stroke-width="3"/>` + lab(334, y, t, col); });
+    svg.innerHTML = s;
+
+    // Beregning med mellomregninger
+    const L = lh / ca, qb = q * ca, qn = qb * ca, qp = qb * sa;
+    const M = qn * L * L / 8, V = qn * L / 2, N = qp * L;
+    calc.textContent =
+`L   = lₕ / cos α     = ${n(lh,1)} / ${n(ca,3)}      = ${n(L,3)} m
+q_L = q · cos α      = ${n(q,1)} · ${n(ca,3)}       = ${n(qb,3)} kN/m
+q⊥  = q_L · cos α    = ${n(qb,3)} · ${n(ca,3)}     = ${n(qn,3)} kN/m → bøyning
+q∥  = q_L · sin α    = ${n(qb,3)} · ${n(sa,3)}     = ${n(qp,3)} kN/m → trykk
+
+M   = q⊥ · L² / 8    = ${n(qn,3)} · ${n(L*L,3)} / 8 = ${n(M,2)} kNm
+  kontroll q·lₕ²/8   = ${n(q,1)} · ${n(lh*lh,2)} / 8    = ${n(q*lh*lh/8,2)} kNm ✓
+V   = q⊥ · L / 2     = ${n(qn,3)} · ${n(L,3)} / 2   = ${n(V,2)} kN
+N   = q∥ · L         = ${n(qp,3)} · ${n(L,3)}       = ${n(N,2)} kN`;
+  }
+  [bA, bL, bQ].forEach(el => el.addEventListener('input', drawBeam));
+  drawBeam();
+
+  if (!playing) t = T.end - 2;   // redusert bevegelse: vis sluttbildet
+  setPlaying(playing);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js'));</script>
+</body>
+</html>
