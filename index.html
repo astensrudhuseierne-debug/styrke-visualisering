@@ -105,13 +105,13 @@ footer { font-size: 0.85rem; color: var(--muted); max-width: 68ch; }
 <div class="wrap">
   <header>
     <h1>Styrkeberegning visualisert</h1>
-    <p class="lead">Tjueto eksempler i to kapitler. Kapittel 1 starter med sin og cos på enhetssirkelen og bygger videre til bjelker, søyler og avstivning. Kapittel 2 tar for seg bygningsfysikk: U-verdier, fukt og kuldebroer. Du kan skru på en parameter om gangen, og tegning og utregning følger med. Alle tall vises med mellomregninger, så du kan kontrollere dem.</p>
+    <p class="lead">Tjuetre eksempler i to kapitler. Kapittel 1 starter med sin og cos på enhetssirkelen og bygger videre til bjelker, søyler og avstivning. Kapittel 2 tar for seg bygningsfysikk og energi: U-verdier, fukt, kuldebroer og varmegjenvinning. Du kan skru på en parameter om gangen, og tegning og utregning følger med. Alle tall vises med mellomregninger, så du kan kontrollere dem.</p>
   </header>
 
   <nav aria-label="Eksempler">
     <div class="navgroup"><b>Kapittel 1 · Statikk og styrke</b><a href="#sincos">Sin og cos</a><a href="#sperre">Skrå sperre</a><a href="#fiber">Fiberretning</a><a href="#bolt">Bolt i skjær</a><a href="#knekk">Knekking</a><a href="#tverrsnitt">Høykant eller flatt</a><a href="#steiner">Steinertillegget</a>
     <a href="#nedboy">Nedbøyning</a><a href="#punktlast">Vandrende last</a><a href="#bjelke">Innspent eller fritt opplagt</a><a href="#ubestemt">Statisk ubestemt bjelke</a><a href="#tabell">Bjelketabell</a><a href="#super">Superposisjon</a><a href="#stag">Skråstag</a><a href="#knute">Knutepunktsmetoden</a><a href="#strekk">Strekkstag</a><a href="#bro">Fagverksbro</a><a href="#mohr">Mohrs sirkel</a></div>
-    <div class="navgroup"><b>Kapittel 2 · Bygningsfysikk</b><a href="#uverdi">U-verdi</a><a href="#sammensatt">U-verdi med stendere</a><a href="#glaser">Glasers metode</a><a href="#kuldebro">Kuldebroer i 2D</a></div>
+    <div class="navgroup"><b>Kapittel 2 · Bygningsfysikk</b><a href="#uverdi">U-verdi</a><a href="#sammensatt">U-verdi med stendere</a><a href="#glaser">Glasers metode</a><a href="#kuldebro">Kuldebroer i 2D</a><a href="#gjenvinner">Varmegjenvinner</a></div>
   </nav>
 
   <h2 class="chapter" id="kap-statikk"><span>Kapittel 1</span>Statikk og styrke</h2>
@@ -588,6 +588,32 @@ Kontroll ved x = 1 rad:  sin² = 0,841² = 0,708   cos² = 0,540² = 0,292   sum
       <li><b>Temperaturfaktoren</b> f<sub>Rsi</sub> = (θ<sub>si</sub> − θ<sub>e</sub>)/(θ<sub>i</sub> − θ<sub>e</sub>) er uavhengig av klimaet og beskriver bare detaljen. Den sammenlignes med kravet f<sub>Rsi,min</sub>, som regnes ut fra innelufta: overflaten må holde RF under 80 % for å unngå mugg (NS-EN ISO 13788). Tyske regler (DIN 4108-2) bruker f<sub>Rsi</sub> ≥ 0,70 som fast grense.</li>
       <li><b>Summen av kuldebroene</b> gir normalisert kuldebroverdi for bygningen. TEK17 § 14-2 krever høyst 0,05 W/(m²K) for småhus og 0,07 for boligblokk, regnet per m² oppvarmet BRA.</li>
     </ul><p class="note">Numerisk løsning med endelige volumer (stasjonær varmeledning i 2D, iterativ SOR-løser). Varmetapet regnes med R<sub>si</sub> = 0,13 og overflatetemperaturen med R<sub>si</sub> = 0,25 (NS-EN ISO 13788). R<sub>se</sub> = 0,04, unntatt bak luftet kledning der R<sub>se</sub> = 0,13. ψ er regnet med innvendige mål (ψ<sub>i</sub>). Hjørnet viser også ψ<sub>e</sub>. Rutenettet er 4–20 mm, og tynne sjikt er rundet av til hele ruter. Materialverdiene er typiske verdier. λ for kuldebrobryteren er en illustrativ ekvivalent verdi, så bruk produsentens dokumenterte ψ-verdi.</p></div>
+  </section>
+
+  <!-- BF5 Varmegjenvinner -->
+  <section class="mod" id="gjenvinner">
+    <div class="mod-head"><span class="tag">Ventilasjon · temperaturvirkningsgrad og effekt</span><h2>Roterende varmegjenvinner</h2></div>
+    <p>Rotoren varmes opp av avtrekkslufta og gir varmen fra seg til uteluft som strømmer motsatt vei. <b>Temperaturvirkningsgraden</b> sammenligner det gjenvinneren klarer med det maksimalt mulige: η = (t<sub>tilluft</sub> − t<sub>ute</sub>)/(t<sub>avtrekk</sub> − t<sub>ute</sub>). Effekten er P = ρ·c<sub>p</sub>·q·Δt ≈ 0,335·q[m³/h]·Δt [W].</p>
+    <div class="ctrl">
+      <label>Beregning <select id="vg-mode"><option value="eta">Fra virkningsgrad</option><option value="maalt" selected>Fra målte temperaturer</option></select></label>
+      <label>Ute t<sub>21</sub> <input type="range" id="vg-tu" min="-30" max="15" step="1" value="-15"><output id="vg-tu-o"></output></label>
+      <label>Avtrekk t<sub>11</sub> <input type="range" id="vg-ta" min="16" max="26" step="1" value="23"><output id="vg-ta-o"></output></label>
+      <label data-vg="eta">Virkningsgrad η <input type="range" id="vg-eta" min="0.5" max="0.9" step="0.01" value="0.8"><output id="vg-eta-o"></output></label>
+      <label data-vg="maalt">Målt tilluft t<sub>22</sub> <input type="range" id="vg-tt" min="-30" max="26" step="0.5" value="14"><output id="vg-tt-o"></output></label>
+      <label data-vg="maalt">Målt avkast t<sub>12</sub> <input type="range" id="vg-tk" min="-30" max="26" step="0.5" value="10"><output id="vg-tk-o"></output></label>
+      <label>Tilluft q<sub>til</sub> <input type="range" id="vg-qt" min="100" max="5000" step="10" value="250"><output id="vg-qt-o"></output></label>
+      <label>Avtrekk q<sub>avt</sub> <input type="range" id="vg-qa" min="100" max="5000" step="10" value="250"><output id="vg-qa-o"></output></label>
+      <label>Ønsket tilluft (settpunkt) <input type="range" id="vg-set" min="15" max="22" step="0.5" value="18"><output id="vg-set-o"></output></label>
+    </div>
+    <div class="viz"><svg id="vg-svg" viewBox="0 0 640 425" role="img" aria-label="Roterende varmegjenvinner med fire luftstrømmer, temperaturer, virkningsgrad og effekt"></svg></div>
+    <pre class="calc" id="vg-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Mål virkningsgraden på tilluftsiden.</b> Definisjonen i NS-EN 308 og i produktdatablad er η = (t<sub>22</sub> − t<sub>21</sub>)/(t<sub>11</sub> − t<sub>21</sub>). Nevneren (her 38 K) er det beste som er mulig, og telleren er det gjenvinneren faktisk klarer.</li>
+      <li><b>Avkastsiden er en kontroll.</b> Med like luftmengder skal avtrekket miste like mange grader som tilluften får. Gjør det ikke det, er luftmengdene i ubalanse, eller så er en føler feil plassert. Det er også mulig at rotoren lekker (overføring mellom luftstrømmene), at det står en motor i luftstrømmen, eller at fukt kondenserer.</li>
+      <li><b>Det gjenvinneren ikke klarer, må ettervarmes.</b> Ettervarmebatteriet dekker resten opp til settpunktet. Med 80 % virkningsgrad og −15 °C ute dekker gjenvinneren over 80 % av oppvarmingsbehovet for ventilasjonslufta.</li>
+      <li><b>TEK17 § 14-2</b> krever årsgjennomsnittlig temperaturvirkningsgrad ≥ 80 % for varmegjenvinneren. Det er et årsgjennomsnitt, så én måling ved én utetemperatur er ikke en dokumentasjon av kravet.</li>
+      <li><b>Avkast under 0 °C:</b> Fukt i avtrekkslufta kan da fryse i veksleren. Roterende gjenvinnere tåler mer enn platevekslere, men anlegget kan redusere gjenvinningen for å unngå ising. Det gir lavere virkningsgrad når det er som kaldest.</li>
+    </ul><p class="note">Bare følbar varme er tatt med. Rotoren overfører også noe fukt, og det er ikke regnet med her. ρ·c<sub>p</sub> = 1,2 kg/m³ · 1005 J/(kg·K) = 1206 J/(m³K), som gir 0,335 W·h/(m³K). Luftmengdene er eksempelverdier for en bolig. Forventet avkast er beregnet med energibalanse for følbar varme: t<sub>12</sub> = t<sub>11</sub> − (q<sub>til</sub>/q<sub>avt</sub>)·(t<sub>22</sub> − t<sub>21</sub>).</p></div>
   </section>
 
   <footer><p>Eksemplene er laget for å forstå mekanikken og for overslag. De erstatter ikke prosjektering etter Eurokode med lastkombinasjoner, materialfaktorer og ansvarlig prosjekterende.</p><p><b>Det kontrollen ikke dekker:</b> Formlene er kontrollert mot uavhengig regning, men ikke mot originalkilden til bjelketabellen. Lastverdiene er eksempler, og bruddkontrollen bruker karakteristiske verdier uten k<sub>mod</sub> og γ<sub>M</sub>. Appen viser mekanikken og egner seg til overslag, men er ikke en dimensjonering.</p></footer>
@@ -2719,9 +2745,94 @@ Vurdering: ${fRsi >= fReq ? 'f_Rsi ≥ f_Rsi,min, lav risiko for muggvekst ✓' 
   const kSchedule = () => { clearTimeout(kTimer); kTimer = setTimeout(kuldebro, 30); };
   bind(['k2-det', 'k2-st', 'k2-ut', 'k2-vt', 'k2-bv', 'k2-lkb', 'k2-ti', 'k2-te', 'k2-rf'], kSchedule);
   window.addEventListener('resize', kSchedule);
-  window.__bf = { psat, dewpoint, iso6946, glaserCalc, buildDetail, solveField, kuldebroNow: kuldebro, uverdi, glaser, sammensatt };
+  // ---------- 5. Roterende varmegjenvinner ----------
+  const RHOCP = 1.2 * 1005 / 3600; // W·h/(m³K) → W per m³/h og K
+  function tColor(t) { // −25 (blå) .. 25 (rød)
+    const f = Math.max(0, Math.min(1, (t + 25) / 50)), c = tempColorBF(f); return `rgb(${c[0]},${c[1]},${c[2]})`;
+  }
+  function tempColorBF(f) {
+    const stops = [[0, [43, 92, 170]], [0.25, [63, 169, 214]], [0.5, [181, 220, 76]], [0.75, [233, 180, 92]], [1, [238, 90, 111]]];
+    for (let i = 1; i < stops.length; i++) if (f <= stops[i][0]) { const [a, ca] = stops[i - 1], [b2, cb] = stops[i], t = (f - a) / (b2 - a); return ca.map((v, k) => Math.round(v + (cb[k] - v) * t)); }
+    return stops[stops.length - 1][1];
+  }
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function gjenvinner() {
+    const mode = $('vg-mode').value;
+    document.querySelectorAll('#gjenvinner [data-vg]').forEach(el => { el.hidden = el.dataset.vg !== mode; });
+    const t21 = +$('vg-tu').value, t11 = +$('vg-ta').value, qt = +$('vg-qt').value, qa = +$('vg-qa').value, tset = +$('vg-set').value;
+    $('vg-tu-o').textContent = t21 + ' °C'; $('vg-ta-o').textContent = t11 + ' °C'; $('vg-qt-o').textContent = qt + ' m³/h'; $('vg-qa-o').textContent = qa + ' m³/h'; $('vg-set-o').textContent = n(tset, 1) + ' °C';
+    $('vg-eta-o').textContent = Math.round(+$('vg-eta').value * 100) + ' %'; $('vg-tt-o').textContent = n(+$('vg-tt').value, 1) + ' °C'; $('vg-tk-o').textContent = n(+$('vg-tk').value, 1) + ' °C';
+    const dMax = t11 - t21;
+    let t22, t12, eta;
+    const t12bal = t22x => t11 - qt / qa * (t22x - t21);
+    if (mode === 'eta') { eta = +$('vg-eta').value; t22 = t21 + eta * dMax; t12 = t12bal(t22); }
+    else { t22 = +$('vg-tt').value; t12 = +$('vg-tk').value; eta = dMax > 0 ? (t22 - t21) / dMax : NaN; }
+    const etaAvk = dMax > 0 ? (t11 - t12) / dMax : NaN, t12exp = t12bal(t22);
+    const Pgj = RHOCP * qt * (t22 - t21), Putt = RHOCP * qt * (tset - t21), Pett = RHOCP * qt * Math.max(0, tset - t22), Pavt = RHOCP * qa * (t11 - t12);
+    const ratioImpl = (t22 - t21) !== 0 ? (t11 - t12) / (t22 - t21) : NaN;
+    const imbalance = mode === 'maalt' && Math.abs(t12 - t12exp) > 1.5;
+    // ---- Tegning ----
+    let s = '';
+    const ry0 = 30, ry1 = 232, rx0 = 286, rx1 = 354;
+    // Kanaler
+    s += rect(40, 58, 560, 58, '#1b2025', '#2f363c') + rect(40, 150, 560, 58, '#1b2025', '#2f363c');
+    // Rotor med roterende striper
+    s += `<defs><clipPath id="vg-clip"><rect x="${rx0}" y="${ry0}" width="${rx1 - rx0}" height="${ry1 - ry0}" rx="14"/></clipPath>
+      <linearGradient id="vg-rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${tColor(t11)}" stop-opacity="0.55"/><stop offset="0.5" stop-color="${tColor((t11 + t21) / 2)}" stop-opacity="0.45"/><stop offset="1" stop-color="${tColor(t21)}" stop-opacity="0.55"/></linearGradient></defs>`;
+    s += `<rect x="${rx0}" y="${ry0}" width="${rx1 - rx0}" height="${ry1 - ry0}" rx="14" fill="url(#vg-rg)" stroke="${C.fg}" stroke-width="1.5"/>`;
+    let stripes = ''; for (let y = ry0 - 30; y < ry1 + 30; y += 12) stripes += line(rx0, y, rx1, y + 8, 'rgba(232,234,236,0.35)', 1.2);
+    s += `<g clip-path="url(#vg-clip)"><g>${stripes}${reduceMotion ? '' : '<animateTransform attributeName="transform" type="translate" from="0 0" to="0 24" dur="1.2s" repeatCount="indefinite"/>'}</g></g>`;
+    s += `<circle cx="${(rx0 + rx1) / 2}" cy="${(ry0 + ry1) / 2}" r="7" fill="#0f1214" stroke="${C.fg}"/>`;
+    s += txt((rx0 + rx1) / 2, ry1 + 16, 'rotor', { a: 'middle', s: 11 });
+    // Pilene: avtrekk (venstre topp →), avkast (høyre topp →), uteluft (høyre bunn ←), tilluft (venstre bunn ←)
+    const arr = (x1, x2, y, t, w = 16) => { const dir = Math.sign(x2 - x1), hx = x2 - dir * 16; return `<path d="M${x1} ${y - w / 2} L${hx} ${y - w / 2} L${hx} ${y - w} L${x2} ${y} L${hx} ${y + w} L${hx} ${y + w / 2} L${x1} ${y + w / 2} Z" fill="${tColor(t)}" fill-opacity="0.9"/>`; };
+    s += arr(56, rx0 - 8, 87, t11) + arr(rx1 + 8, 590, 87, t12) + arr(590, rx1 + 8, 179, t21) + arr(rx0 - 8, 50, 179, t22);
+    const lab = (x, y, title, t, a = 'start', warn = false) => txt(x, y, title, { a, s: 11, c: C.mu }) + txt(x, y + 22, n(t, 1) + ' °C', { a, s: 18, c: warn ? C.r : C.fg, w: 600 });
+    s += lab(56, 30, 'Avtrekk t11', t11) + lab(590, 30, 'Avkast t12', t12, 'end', imbalance) + lab(590, 232, 'Uteluft t21', t21, 'end') + lab(56, 232, 'Tilluft t22', t22);
+    if (imbalance) s += txt(590, 136, `ved balanse: ${n(t12exp, 1)} °C`, { a: 'end', s: 11, c: C.r });
+    // Temperaturstiger: det den klarer / det beste mulige
+    const bx = 90, bw = 360, yb1 = 282, yb2 = 316, X = t => bx + (t - t21) / Math.max(dMax, 1e-9) * bw;
+    s += txt(bx - 8, yb1 + 12, 'Tilluft', { a: 'end', s: 11 }) + txt(bx - 8, yb2 + 12, 'Avkast', { a: 'end', s: 11 });
+    s += rect(bx, yb1, bw, 16, '#232a30') + rect(bx, yb2, bw, 16, '#232a30');
+    const cl = v => Math.max(bx, Math.min(bx + bw, v));
+    s += rect(bx, yb1, cl(X(t22)) - bx, 16, tColor(t22), 'none', 0.85);
+    s += rect(cl(X(t12)), yb2, bx + bw - cl(X(t12)), 16, tColor(t12), 'none', 0.85);
+    s += txt(bx, yb1 - 6, `${n(t21, 0)} °C`, { s: 10 }) + txt(bx + bw, yb1 - 6, `${n(t11, 0)} °C`, { a: 'end', s: 10 }) + txt(bx + bw / 2, yb1 - 6, `maks mulig ${n(dMax, 0)} K`, { a: 'middle', s: 10 });
+    s += txt(bx + bw + 10, yb1 + 12, `η = ${n(t22 - t21, 1)}/${n(dMax, 0)} = ${n(eta * 100, 0)} %`, { s: 11, c: C.fg, w: 600 });
+    s += txt(bx + bw + 10, yb2 + 12, `${n(t11 - t12, 1)}/${n(dMax, 0)} = ${n(etaAvk * 100, 0)} %`, { s: 11, c: imbalance ? C.r : C.fg, w: 600 });
+    // Effekt
+    const py = 358, pw = 360, Pm = Math.max(Putt, Pgj + Pett, 1);
+    s += txt(bx - 8, py + 12, 'Effekt', { a: 'end', s: 11 });
+    s += rect(bx, py, Pgj / Pm * pw, 18, C.g, 'none', 0.85) + rect(bx + Pgj / Pm * pw, py, Pett / Pm * pw, 18, C.r, 'none', 0.85);
+    s += rect(bx, py + 26, Putt / Pm * pw, 6, C.mu, 'none', 0.6);
+    s += txt(bx + bw + 10, py + 13, `${n((Pgj + Pett) / 1000, 2)} kW`, { s: 11, c: C.fg, w: 600 }) + txt(bx + bw + 10, py + 33, `uten: ${n(Putt / 1000, 2)} kW`, { s: 11 });
+    s += txt(bx, py + 54, `■ gjenvunnet ${n(Pgj / 1000, 2)} kW`, { s: 11, c: C.g }) + txt(bx + 200, py + 54, `■ ettervarming ${n(Pett / 1000, 2)} kW`, { s: 11, c: C.r });
+    $('vg-svg').innerHTML = s;
+    // ---- Utregning ----
+    let c = `η_tilluft = (t22 − t21)/(t11 − t21) = (${n(t22, 1)} − (${n(t21, 1)}))/(${n(t11, 1)} − (${n(t21, 1)})) = ${n(t22 - t21, 1)}/${n(dMax, 1)} = ${n(eta, 3)}  (${n(eta * 100, 0)} %)
+η_avkast  = (t11 − t12)/(t11 − t21) = (${n(t11, 1)} − ${n(t12, 1)})/${n(dMax, 1)} = ${n(t11 - t12, 1)}/${n(dMax, 1)} = ${n(etaAvk, 3)}
+Kontroll med energibalanse: forventet t12 = t11 − (q_til/q_avt)·(t22 − t21) = ${n(t11, 1)} − (${qt}/${qa})·${n(t22 - t21, 1)} = ${n(t12exp, 1)} °C`;
+    if (mode === 'maalt') c += imbalance
+      ? `\n  ✗ Målt avkast ${n(t12, 1)} °C avviker ${n(t12 - t12exp, 1)} K. ` + (isFinite(ratioImpl) && ratioImpl > 0
+          ? `Målingene passer med q_avt/q_til = ${n(1 / ratioImpl, 2)}, altså ubalanse i luftmengdene. Det kan også skyldes feil føler, lekkasje i rotoren eller kondens.`
+          : `Det kan ikke forklares med ubalanse i luftmengdene. Kontroller følerne.`)
+      : `\n  ✓ Målt avkast stemmer med balansen (avvik ${n(t12 - t12exp, 1)} K)`;
+    if (mode === 'maalt' && (eta > 1 || eta < 0)) c += `\n  ✗ η utenfor 0–100 %: tilluften kan ikke bli varmere enn avtrekket eller kaldere enn utelufta. Kontroller følerne.`;
+    c += `
+ρ·cp = 1,2 · 1005 / 3600 = ${n(RHOCP, 3)} W·h/(m³K)
+Gjenvunnet effekt  P = ρ·cp·q_til·(t22 − t21) = ${n(RHOCP, 3)}·${qt}·${n(t22 - t21, 1)} = ${n(Pgj, 0)} W
+Uten gjenvinner    P = ρ·cp·q_til·(t_sett − t21) = ${n(RHOCP, 3)}·${qt}·${n(tset - t21, 1)} = ${n(Putt, 0)} W
+Ettervarming       P = ρ·cp·q_til·(t_sett − t22) = ${n(RHOCP, 3)}·${qt}·${n(Math.max(0, tset - t22), 1)} = ${n(Pett, 0)} W${t22 > tset ? '  (tilluften er allerede over settpunktet)' : ''}
+Avgitt fra avtrekk P = ρ·cp·q_avt·(t11 − t12) = ${n(RHOCP, 3)}·${qa}·${n(t11 - t12, 1)} = ${n(Pavt, 0)} W${Math.abs(Pavt - Pgj) > 0.05 * Math.max(Pgj, 1) ? '  ≠ gjenvunnet, energibalansen går ikke opp' : '  = gjenvunnet ✓'}
+Gjenvinneren dekker ${n(Math.min(1, Pgj / Math.max(Putt, 1e-9)) * 100, 0)} % av oppvarmingsbehovet for tilluften${t12 < 0 ? `\nAvkast ${n(t12, 1)} °C er under 0 °C: fare for ising, og anlegget kan redusere gjenvinningen.` : ''}`;
+    $('vg-calc').textContent = c;
+    window.__vgLast = { eta, etaAvk, t22, t12, t12exp, Pgj, Putt, Pett, Pavt, imbalance };
+  }
+  bind(['vg-mode', 'vg-tu', 'vg-ta', 'vg-eta', 'vg-tt', 'vg-tk', 'vg-qt', 'vg-qa', 'vg-set'], gjenvinner);
 
-  loadPreset(); sammensatt(); glaser(); kuldebro();
+  window.__bf = { psat, dewpoint, iso6946, glaserCalc, buildDetail, solveField, kuldebroNow: kuldebro, uverdi, glaser, sammensatt, gjenvinner };
+
+  loadPreset(); sammensatt(); glaser(); kuldebro(); gjenvinner();
 })();
 </script>
 
