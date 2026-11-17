@@ -1,6 +1,10 @@
 # Styrke – installerbar app (PWA)
 
-Appen er én side med atten interaktive eksempler: sin og cos på enhetssirkelen (animert), skrå sperre, fiberretning, bolt i skjær, knekking, høykant eller flatt, Steinertillegget, nedbøyning, vandrende last, innspent eller fritt opplagt bjelke, statisk ubestemt bjelke (kraftmetoden), bjelketabell med 21 lasttilfeller, superposisjon, skråstag, knutepunktsmetoden, strekkraft i stag, fagverksbro med kjøretøy og Mohrs sirkel.
+Appen er én side med 22 interaktive eksempler i to kapitler.
+
+**Kapittel 1 · Statikk og styrke:** sin og cos på enhetssirkelen (animert), skrå sperre, fiberretning, bolt i skjær, knekking, høykant eller flatt, Steinertillegget, nedbøyning, vandrende last, innspent eller fritt opplagt bjelke, statisk ubestemt bjelke (kraftmetoden), bjelketabell med 21 lasttilfeller, superposisjon, skråstag, knutepunktsmetoden, strekkraft i stag, fagverksbro med kjøretøy og Mohrs sirkel.
+
+**Kapittel 2 · Bygningsfysikk:** U-verdi for lagdelt konstruksjon, U-verdi med stendere (NS-EN ISO 6946), Glasers metode for damptrykk og kondens, og kuldebroer i 2D med ψ-verdi og temperaturfaktor.
 
 Etter første åpning fungerer den uten nett.
 
@@ -35,14 +39,14 @@ Trykk på installasjonsikonet i adressefeltet.
 ## 3. Oppdatere appen senere
 
 1. Erstatt filene på nettadressen.
-2. Øk versjonsnummeret øverst i `sw.js`, for eksempel `styrke-v10` → `styrke-v11`.
+2. Øk versjonsnummeret øverst i `sw.js`, for eksempel `styrke-v11` → `styrke-v12`.
 3. Telefonen henter ny versjon neste gang appen åpnes med nett.
 
 ## Filer
 
 | Fil | Innhold |
 |---|---|
-| `index.html` | Hele appen (alle atten eksempler) |
+| `index.html` | Hele appen (alle 22 eksempler) |
 | `manifest.webmanifest` | Navn, ikon og fullskjermvisning |
 | `sw.js` | Lagring for bruk uten nett |
 | `icons/` | App-ikoner |

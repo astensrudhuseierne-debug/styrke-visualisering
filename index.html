@@ -82,6 +82,21 @@ pre.calc {
 #sc-canvas { display: block; margin: 0 auto; width: min(100%, calc(72vh * 9 / 16)); max-width: 100%; aspect-ratio: 9 / 16; border-radius: 8px; background: #0b0d0f; }
 .sc-step { font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); text-align: center; max-width: none; }
 .v-red { color: var(--red); } .v-green { color: var(--green); } .v-amber { color: var(--amber); } .v-blue { color: var(--blue); }
+.chapter { margin: 18px 0 -6px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 1.45rem; font-weight: 600; display: grid; gap: 2px; text-wrap: balance; }
+.chapter span { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); font-weight: 500; }
+#kap-statikk { border-top: 0; padding-top: 0; margin-top: 0; }
+.navgroup { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.navgroup > b { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; flex-basis: 100%; }
+nav { display: grid !important; gap: 12px; }
+.layers { display: grid; gap: 6px; }
+.lrow { display: grid; grid-template-columns: minmax(0, 1fr) 84px 84px 34px; gap: 8px; align-items: center; }
+.lrow.lhead span { font-size: 0.78rem; color: var(--muted); }
+.lrow input { min-width: 0; width: 100%; font: 0.88rem var(--font-body); color: var(--fg); background: var(--inset); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.lrow input[type=number] { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.kb-viz canvas { display: block; width: 100%; min-width: 0; }
+.ctrl label { flex-wrap: wrap; }
+[hidden] { display: none !important; }
+.ctrl select { min-width: 0; max-width: 100%; flex: 1 1 160px; }
 footer { font-size: 0.85rem; color: var(--muted); max-width: 68ch; }
 </style>
 
@@ -90,13 +105,16 @@ footer { font-size: 0.85rem; color: var(--muted); max-width: 68ch; }
 <div class="wrap">
   <header>
     <h1>Styrkeberegning visualisert</h1>
-    <p class="lead">Atten eksempler som starter med sin og cos på enhetssirkelen og bygger videre til bjelker, søyler og avstivning. Du kan skru på en parameter om gangen, og tegning og utregning følger med. Alle tall vises med mellomregninger, så du kan kontrollere dem.</p>
+    <p class="lead">Tjueto eksempler i to kapitler. Kapittel 1 starter med sin og cos på enhetssirkelen og bygger videre til bjelker, søyler og avstivning. Kapittel 2 tar for seg bygningsfysikk: U-verdier, fukt og kuldebroer. Du kan skru på en parameter om gangen, og tegning og utregning følger med. Alle tall vises med mellomregninger, så du kan kontrollere dem.</p>
   </header>
 
   <nav aria-label="Eksempler">
-    <a href="#sincos">Sin og cos</a><a href="#sperre">Skrå sperre</a><a href="#fiber">Fiberretning</a><a href="#bolt">Bolt i skjær</a><a href="#knekk">Knekking</a><a href="#tverrsnitt">Høykant eller flatt</a><a href="#steiner">Steinertillegget</a>
-    <a href="#nedboy">Nedbøyning</a><a href="#punktlast">Vandrende last</a><a href="#bjelke">Innspent eller fritt opplagt</a><a href="#ubestemt">Statisk ubestemt bjelke</a><a href="#tabell">Bjelketabell</a><a href="#super">Superposisjon</a><a href="#stag">Skråstag</a><a href="#knute">Knutepunktsmetoden</a><a href="#strekk">Strekkstag</a><a href="#bro">Fagverksbro</a><a href="#mohr">Mohrs sirkel</a>
+    <div class="navgroup"><b>Kapittel 1 · Statikk og styrke</b><a href="#sincos">Sin og cos</a><a href="#sperre">Skrå sperre</a><a href="#fiber">Fiberretning</a><a href="#bolt">Bolt i skjær</a><a href="#knekk">Knekking</a><a href="#tverrsnitt">Høykant eller flatt</a><a href="#steiner">Steinertillegget</a>
+    <a href="#nedboy">Nedbøyning</a><a href="#punktlast">Vandrende last</a><a href="#bjelke">Innspent eller fritt opplagt</a><a href="#ubestemt">Statisk ubestemt bjelke</a><a href="#tabell">Bjelketabell</a><a href="#super">Superposisjon</a><a href="#stag">Skråstag</a><a href="#knute">Knutepunktsmetoden</a><a href="#strekk">Strekkstag</a><a href="#bro">Fagverksbro</a><a href="#mohr">Mohrs sirkel</a></div>
+    <div class="navgroup"><b>Kapittel 2 · Bygningsfysikk</b><a href="#uverdi">U-verdi</a><a href="#sammensatt">U-verdi med stendere</a><a href="#glaser">Glasers metode</a><a href="#kuldebro">Kuldebroer i 2D</a></div>
   </nav>
+
+  <h2 class="chapter" id="kap-statikk"><span>Kapittel 1</span>Statikk og styrke</h2>
 
   <!-- 0 Sin og cos -->
   <section class="mod" id="sincos">
@@ -472,6 +490,104 @@ Kontroll ved x = 1 rad:  sin² = 0,841² = 0,708   cos² = 0,540² = 0,292   sum
       <li>Sett σ<sub>x</sub> = σ<sub>y</sub> = 0 og bare τ. Da ligger største strekkspenning på 45°. Det er derfor skjærriss i betongbjelker går skrått nær oppleggene, og hvorfor bøyler trengs.</li>
       <li>Hovedspenningene σ<sub>1</sub> og σ<sub>2</sub> er der sirkelen krysser σ-aksen. Der er skjærspenningen null.</li>
     </ul></div>
+  </section>
+
+    <h2 class="chapter" id="kap-bygningsfysikk"><span>Kapittel 2</span>Bygningsfysikk</h2>
+
+  <!-- BF1 U-verdi -->
+  <section class="mod" id="uverdi">
+    <div class="mod-head"><span class="tag">Varmeisolasjon · NS-EN ISO 6946</span><h2>U-verdi for lagdelt konstruksjon</h2></div>
+    <p>Varmemotstanden til hvert sjikt er R = d/λ. Motstandene legges i serie sammen med overgangsmotstandene innvendig og utvendig: R<sub>T</sub> = R<sub>si</sub> + ΣR + R<sub>se</sub>, og U = 1/R<sub>T</sub>. Temperaturen faller i hvert sjikt i forhold til sjiktets andel av R<sub>T</sub>. Slå på «termisk skala» for å se at profilen da blir en rett linje.</p>
+    <div class="ctrl">
+      <label>Bygningsdel <select id="uv-del"><option value="vegg">Yttervegg (varmestrøm horisontalt)</option><option value="tak">Tak (varmestrøm oppover)</option><option value="gulv">Gulv mot det fri (varmestrøm nedover)</option></select></label>
+      <label>Eksempel <select id="uv-preset"><option value="v198">Yttervegg 198 mm, bare isolasjonsfeltet</option><option value="v148">Yttervegg 148 + 50 mm innvendig påforing</option><option value="v100">Eldre yttervegg 100 mm (1970-tallet)</option><option value="betong">Betongvegg + 150 mm utvendig EPS, pusset</option><option value="tak">Skrått tak 300 mm, luftet</option><option value="gulv">Gulv over det fri 250 mm</option></select></label>
+      <label>Innetemperatur θ<sub>i</sub> <input type="range" id="uv-ti" min="15" max="24" step="1" value="20"><output id="uv-ti-o"></output></label>
+      <label>Utetemperatur θ<sub>e</sub> <input type="range" id="uv-te" min="-30" max="5" step="1" value="-15"><output id="uv-te-o"></output></label>
+      <label><input type="checkbox" id="uv-luft"> Luftet kledning eller lufting (R<sub>se</sub> = R<sub>si</sub>)</label>
+      <label><input type="checkbox" id="uv-therm"> Vis i termisk skala (R)</label>
+    </div>
+    <div class="layers" id="uv-layers"></div>
+    <div><button type="button" id="uv-add">Legg til sjikt</button></div>
+    <div class="viz"><svg id="uv-svg" viewBox="0 0 640 330" role="img" aria-label="Snitt gjennom konstruksjonen med temperaturprofil"></svg></div>
+    <pre class="calc" id="uv-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Isolasjonen tar nesten hele temperaturfallet.</b> Gips, plater og membraner har liten R og påvirker U-verdien lite. Det er tykkelsen og λ-verdien i isolasjonen som styrer.</li>
+      <li><b>Luftet kledning teller ikke.</b> Ved godt ventilert luftspalte ses det bort fra spalten og alt utenfor den, og R<sub>se</sub> settes lik R<sub>si</sub> (NS-EN ISO 6946).</li>
+      <li><b>Dette er U-verdien for isolasjonsfeltet alene.</b> Stendere, svill og losholter øker varmetapet. Neste modul regner med dem.</li>
+      <li><b>Hvor kald er innsiden?</b> θ<sub>si</sub> = θ<sub>i</sub> − R<sub>si</sub>·U·(θ<sub>i</sub> − θ<sub>e</sub>). En godt isolert vegg har innvendig overflate nær romtemperatur. Det gir god komfort og liten risiko for mugg.</li>
+    </ul><p class="note">Overgangsmotstander etter NS-EN ISO 6946: R<sub>si</sub> = 0,13 / 0,10 / 0,17 m²K/W for horisontal, oppover og nedover varmestrøm, og R<sub>se</sub> = 0,04. λ-verdiene i eksemplene er typiske verdier. Bruk deklarerte verdier for produktet. TEK17-kravene er hentet fra § 14-2 (energitiltak) og § 14-3 (minimumskrav) slik de gjaldt i november 2026. Forslag til endrede energikrav var på høring våren 2026, så sjekk gjeldende tekst hos DiBK.</p></div>
+  </section>
+
+  <!-- BF2 Sammensatte sjikt -->
+  <section class="mod" id="sammensatt">
+    <div class="mod-head"><span class="tag">Inhomogene sjikt · NS-EN ISO 6946, kombinert metode</span><h2>U-verdi med stendere</h2></div>
+    <p>I en bindingsverksvegg går varmen både gjennom isolasjonen og gjennom stenderne. Standarden regner to grenser og bruker gjennomsnittet. <b>Øvre grense R′</b> lar varmen gå i parallelle baner gjennom hele veggen. <b>Nedre grense R″</b> slår sammen hvert sjikt til en midlere λ. Den virkelige verdien ligger mellom de to, og R<sub>T</sub> = (R′ + R″)/2.</p>
+    <div class="ctrl">
+      <label>Stender <select id="s2-st"><option>36x148</option><option>48x148</option><option>36x198</option><option selected>48x198</option><option>48x248</option></select></label>
+      <label>Senteravstand c/c <input type="range" id="s2-cc" min="300" max="1200" step="50" value="600"><output id="s2-cc-o"></output></label>
+      <label>Ekstra treandel (svill, losholter, innramming) <input type="range" id="s2-ex" min="0" max="15" step="1" value="0"><output id="s2-ex-o"></output></label>
+      <label>λ isolasjon <input type="range" id="s2-li" min="0.030" max="0.040" step="0.001" value="0.035"><output id="s2-li-o"></output></label>
+      <label>Innvendig påforing <select id="s2-pa"><option value="0">Ingen</option><option value="48">48 mm lekter c/c 600 med isolasjon</option></select></label>
+      <label>Utvendig isolasjon <select id="s2-ut"><option value="0">Ingen</option><option value="30">30 mm</option><option value="50" selected>50 mm</option><option value="100">100 mm</option></select></label>
+    </div>
+    <div class="viz"><svg id="s2-svg" viewBox="0 0 640 330" role="img" aria-label="Plansnitt av bindingsverksvegg med varmebaner og søyler for øvre og nedre grense"></svg></div>
+    <pre class="calc" id="s2-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Tre leder varme omtrent fire ganger bedre enn isolasjon</b> (λ 0,13 mot 0,035). En treandel på 10–15 % øker derfor U-verdien merkbart.</li>
+      <li><b>Treandelen er ofte større enn b/c/c.</b> Svill, losholter og innramming rundt vinduer og dører kommer i tillegg. Regn ut den faktiske andelen for veggen. Dette er grunnen til at TEK17 regner stendere inn i veggens U-verdi.</li>
+      <li><b>Kryssende lekter og utvendig isolasjon er effektive</b> fordi de bryter kuldebroen gjennom stenderne.</li>
+      <li><b>Feilen e</b> = (R′ − R″)/(2R<sub>T</sub>) viser hvor usikker metoden er. Standarden setter grenser for når den kan brukes. Ved store forskjeller, eller ved metall gjennom isolasjonen, regnes det med numeriske metoder (se kuldebromodulen).</li>
+    </ul><p class="note">Stenderne regnes som gjennomgående i stendersjiktet. Lektene i påforingen regnes som kryssende, slik at alle kombinasjoner av tre og isolasjon inngår. Gips 12,5 mm innvendig og luftet kledning utvendig med R<sub>se</sub> = R<sub>si</sub> = 0,13. Vindsperre og dampsperre har neglisjerbar R.</p></div>
+  </section>
+
+  <!-- BF3 Glaser -->
+  <section class="mod" id="glaser">
+    <div class="mod-head"><span class="tag">Fukt · Glasers metode, NS-EN ISO 13788</span><h2>Damptrykk og kondens i veggen</h2></div>
+    <p>Varm inneluft inneholder mer vanndamp enn kald uteluft, så dampen vil diffundere utover. Metningstrykket p<sub>sat</sub> faller med temperaturen gjennom veggen. Der damptrykket p ville blitt høyere enn p<sub>sat</sub>, kondenserer dampen. Glasers metode tegner begge kurvene og finner hvor og hvor mye.</p>
+    <div class="ctrl">
+      <label>Inne θ<sub>i</sub> <input type="range" id="g2-ti" min="15" max="25" step="1" value="20"><output id="g2-ti-o"></output></label>
+      <label>Inne RF <input type="range" id="g2-ri" min="20" max="70" step="1" value="40"><output id="g2-ri-o"></output></label>
+      <label>Ute θ<sub>e</sub> <input type="range" id="g2-te" min="-25" max="10" step="1" value="-10"><output id="g2-te-o"></output></label>
+      <label>Ute RF <input type="range" id="g2-re" min="50" max="100" step="1" value="90"><output id="g2-re-o"></output></label>
+      <label>Isolasjon i stendersjiktet <select id="g2-d"><option>98</option><option>148</option><option selected>198</option><option>248</option></select></label>
+      <label>Utvendig isolasjon <select id="g2-u"><option value="0">Ingen</option><option value="50" selected>50 mm</option><option value="100">100 mm</option></select></label>
+      <label>Dampsperre s<sub>d</sub> <select id="g2-sdi"><option value="0.02">Mangler (bare gips og maling)</option><option value="0.5">Dampbrems, 0,5 m</option><option value="10">10 m</option><option value="70" selected>PE-folie, 70 m</option></select></label>
+      <label>Vindsperre s<sub>d</sub> <select id="g2-sde"><option value="0.05" selected>Dampåpen duk, 0,05 m</option><option value="0.5">0,5 m</option><option value="2">2 m</option><option value="10">Damptett, 10 m (feil side)</option></select></label>
+    </div>
+    <div class="viz"><svg id="g2-svg" viewBox="0 0 640 430" role="img" aria-label="Temperaturprofil og Glaser-diagram med metningstrykk og damptrykk gjennom veggen"></svg></div>
+    <pre class="calc" id="g2-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Tett på varm side, åpen på kald side.</b> Dampsperra skal stoppe dampen før den når de kalde sjiktene, og vindsperra må slippe ut det som kommer gjennom. Prøv å bytte: en damptett vindsperre og manglende dampsperre gir kondens rett innenfor vindsperra.</li>
+      <li><b>Utvendig isolasjon løfter temperaturen</b> i overgangen mellom stendersjikt og vindsperre. Da blir metningstrykket høyere, og faren for kondens mindre.</li>
+      <li><b>Ett regnetilfelle er ikke en fuktvurdering.</b> Glaser bruker ett stasjonært klima. NS-EN ISO 13788 regner måned for måned og sjekker om fukten tørker ut om sommeren. Metoden tar ikke med luftlekkasjer, som i praksis ofte gir mer fukt enn diffusjon. En tett dampsperre med tette skjøter er derfor viktig.</li>
+      <li><b>Innvendig overflate:</b> Kondens på overflaten skjer når θ<sub>si</sub> er lavere enn duggpunktet. Muggvekst kan starte allerede ved RF ≈ 80 % mot overflaten (se kuldebromodulen).</li>
+    </ul><p class="note">Metningstrykk etter NS-EN ISO 13788 (Magnus-formelen, egen formel under 0 °C), δ<sub>0</sub> = 2·10⁻¹⁰ kg/(m·s·Pa). s<sub>d</sub> = μ·d. μ-verdiene er typiske verdier: mineralull 1, gips 10. s<sub>d</sub> for folier og duker er eksempelverdier, så bruk produktets deklarerte verdi. Klimaet er et eksempel og ikke et dimensjonerende klima for et bestemt sted.</p></div>
+  </section>
+
+  <!-- BF4 Kuldebroer -->
+  <section class="mod" id="kuldebro">
+    <div class="mod-head"><span class="tag">Kuldebroer · NS-EN ISO 10211, NS-EN ISO 13788</span><h2>Kuldebroer i 2D: temperaturfelt</h2></div>
+    <p>Der isolasjonen brytes eller geometrien endres, finner varmen en snarvei. Feltet under er beregnet numerisk ved å løse varmeledning i hvert punkt i snittet. Fargene viser temperaturen, og de tynne linjene er isotermer. Linjene presses sammen der varmen strømmer raskt ut. Resultatet er kuldebroverdien ψ (ekstra varmetap per meter) og laveste innvendige overflatetemperatur.</p>
+    <div class="ctrl">
+      <label>Detalj <select id="k2-det"><option value="stender">Stender i bindingsverk (plansnitt)</option><option value="hjorne">Utvendig hjørne</option><option value="balkong">Betongdekke og balkong</option></select></label>
+      <label data-k2="stender">Stender <select id="k2-st"><option value="36">36x198</option><option value="48" selected>48x198</option><option value="98">98x198 (dobbel)</option></select></label>
+      <label data-k2="stender">Utvendig isolasjon <select id="k2-ut"><option value="0">Ingen</option><option value="50" selected>50 mm</option></select></label>
+      <label data-k2="hjorne">Veggtype <select id="k2-vt"><option value="bv">Isolert bindingsverk 200 mm</option><option value="bet">Betong 200 + 150 mm utvendig isolasjon</option><option value="tegl">Uisolert teglvegg 250 mm (eldre)</option></select></label>
+      <label data-k2="balkong">Utførelse <select id="k2-bv"><option value="iso">Dekke med isolasjon forbi forkanten</option><option value="gj" selected>Gjennomgående balkongplate</option><option value="kb">Balkong med kuldebrobryter</option></select></label>
+      <label data-k2="balkong">λ kuldebrobryter <input type="range" id="k2-lkb" min="0.05" max="0.5" step="0.01" value="0.15"><output id="k2-lkb-o"></output></label>
+      <label>Inne θ<sub>i</sub> <input type="range" id="k2-ti" min="15" max="24" step="1" value="20"><output id="k2-ti-o"></output></label>
+      <label>Ute θ<sub>e</sub> <input type="range" id="k2-te" min="-25" max="5" step="1" value="-10"><output id="k2-te-o"></output></label>
+      <label>Inne RF <input type="range" id="k2-rf" min="20" max="70" step="1" value="50"><output id="k2-rf-o"></output></label>
+    </div>
+    <div class="viz kb-viz"><canvas id="k2-cv" width="640" height="420" aria-label="Temperaturfelt i snittet med isotermer"></canvas></div>
+    <pre class="calc" id="k2-calc"></pre>
+    <div class="think"><b>Tankegang</b><ul>
+      <li><b>Konstruktive kuldebroer</b> oppstår der et materiale med høy λ går gjennom isolasjonen, for eksempel en betongplate, stålprofiler eller stendere. En gjennomgående balkongplate er et klassisk eksempel. Den gir stort varmetap og kald innvendig overflate i hjørnet mellom vegg og dekke.</li>
+      <li><b>Geometriske kuldebroer</b> oppstår i hjørner, fordi den utvendige flaten som avgir varme er større enn den innvendige flaten som tar den opp. Hjørnet blir kaldere selv uten materialskifte. I eldre, uisolerte hus er det her muggen kommer først, ofte bak møbler.</li>
+      <li><b>ψ avhenger av målereglene.</b> Med innvendige mål blir hjørnets ψ positiv. Med utvendige mål blir den negativ, fordi arealet allerede er overvurdert. Bruk de samme målene som U-verdiarealene i beregningen.</li>
+      <li><b>Temperaturfaktoren</b> f<sub>Rsi</sub> = (θ<sub>si</sub> − θ<sub>e</sub>)/(θ<sub>i</sub> − θ<sub>e</sub>) er uavhengig av klimaet og beskriver bare detaljen. Den sammenlignes med kravet f<sub>Rsi,min</sub>, som regnes ut fra innelufta: overflaten må holde RF under 80 % for å unngå mugg (NS-EN ISO 13788). Tyske regler (DIN 4108-2) bruker f<sub>Rsi</sub> ≥ 0,70 som fast grense.</li>
+      <li><b>Summen av kuldebroene</b> gir normalisert kuldebroverdi for bygningen. TEK17 § 14-2 krever høyst 0,05 W/(m²K) for småhus og 0,07 for boligblokk, regnet per m² oppvarmet BRA.</li>
+    </ul><p class="note">Numerisk løsning med endelige volumer (stasjonær varmeledning i 2D, iterativ SOR-løser). Varmetapet regnes med R<sub>si</sub> = 0,13 og overflatetemperaturen med R<sub>si</sub> = 0,25 (NS-EN ISO 13788). R<sub>se</sub> = 0,04, unntatt bak luftet kledning der R<sub>se</sub> = 0,13. ψ er regnet med innvendige mål (ψ<sub>i</sub>). Hjørnet viser også ψ<sub>e</sub>. Rutenettet er 4–20 mm, og tynne sjikt er rundet av til hele ruter. Materialverdiene er typiske verdier. λ for kuldebrobryteren er en illustrativ ekvivalent verdi, så bruk produsentens dokumenterte ψ-verdi.</p></div>
   </section>
 
   <footer><p>Eksemplene er laget for å forstå mekanikken og for overslag. De erstatter ikke prosjektering etter Eurokode med lastkombinasjoner, materialfaktorer og ansvarlig prosjekterende.</p><p><b>Det kontrollen ikke dekker:</b> Formlene er kontrollert mot uavhengig regning, men ikke mot originalkilden til bjelketabellen. Lastverdiene er eksempler, og bruddkontrollen bruker karakteristiske verdier uten k<sub>mod</sub> og γ<sub>M</sub>. Appen viser mekanikken og egner seg til overslag, men er ikke en dimensjonering.</p></footer>
@@ -2094,6 +2210,518 @@ N   = q∥ · L         = ${n(qp,3)} · ${n(L,3)}       = ${n(N,2)} kN`;
   setPlaying(playing);
   resize();
   requestAnimationFrame(frame);
+})();
+</script>
+<script>
+(() => {
+  // ================= Bygningsfysikk =================
+  const C = { a: '#e9b45c', b: '#3fa9d6', r: '#ee5a6f', g: '#b5dc4c', fg: '#e8eaec', mu: '#9aa3ab', ln: '#2f363c', grid: '#20262b', wood: '#d8c3a0', woodFill: '#3a3024', ins: '#c9b13c', insFill: '#3b3720', conc: '#8a9096', concFill: '#33383c' };
+  const $ = id => document.getElementById(id);
+  const n = (v, d = 2) => { if (!isFinite(v)) return '–'; if (Math.abs(v) < 0.5 * 10 ** -d) v = 0; return v.toLocaleString('nb-NO', { minimumFractionDigits: d, maximumFractionDigits: d }); };
+  const txt = (x, y, t, o = {}) => `<text x="${x}" y="${y}" fill="${o.c || C.mu}" font-size="${o.s || 12}" text-anchor="${o.a || 'start'}"${o.w ? ` font-weight="${o.w}"` : ''}>${t}</text>`;
+  const line = (x1, y1, x2, y2, c, w = 1, dash) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+  const path = (pts, c, w = 2, dash, fill = 'none', op = 1) => `<path d="${pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ')}" fill="${fill}" fill-opacity="${op}" stroke="${c}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ''} stroke-linejoin="round"/>`;
+  const rect = (x, y, w, h, fill, stroke = 'none', op = 1) => `<rect x="${x}" y="${y}" width="${Math.max(0, w)}" height="${Math.max(0, h)}" fill="${fill}" fill-opacity="${op}" stroke="${stroke}"/>`;
+  const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const bind = (ids, fn) => ids.forEach(id => { $(id).addEventListener('input', fn); $(id).addEventListener('change', fn); });
+  // Metningstrykk (Pa) etter NS-EN ISO 13788
+  const psat = t => t >= 0 ? 610.5 * Math.exp(17.269 * t / (237.3 + t)) : 610.5 * Math.exp(21.875 * t / (265.5 + t));
+  const dewpoint = p => { let lo = -60, hi = 60; for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; if (psat(m) < p) lo = m; else hi = m; } return (lo + hi) / 2; };
+  const RS = { vegg: [0.13, 0.04], tak: [0.10, 0.04], gulv: [0.17, 0.04] };
+  const KRAV = { vegg: [0.18, 0.22], tak: [0.13, 0.18], gulv: [0.10, 0.18] };
+  const DELNAVN = { vegg: 'yttervegg', tak: 'tak', gulv: 'gulv' };
+
+  // ---------- 1. U-verdi lagdelt ----------
+  const PRESETS = {
+    v198: { del: 'vegg', luft: true, L: [['Gips', 12.5, 0.25], ['Mineralull (mellom stendere)', 198, 0.035], ['Vindsperre, dampåpen duk', 0.5, 0.2]] },
+    v148: { del: 'vegg', luft: true, L: [['Gips', 12.5, 0.25], ['Mineralull, påforing', 50, 0.035], ['Mineralull (mellom stendere)', 148, 0.035], ['Porøs trefiberplate', 12, 0.05]] },
+    v100: { del: 'vegg', luft: true, L: [['Trepanel', 12, 0.13], ['Mineralull, eldre', 100, 0.04], ['Porøs trefiberplate', 12, 0.05]] },
+    betong: { del: 'vegg', luft: false, L: [['Betong (armert)', 200, 2.5], ['EPS', 150, 0.035], ['Puss', 10, 1.0]] },
+    tak: { del: 'tak', luft: true, L: [['Trepanel', 15, 0.13], ['Mineralull', 300, 0.035], ['Undertaksduk', 0.5, 0.2]] },
+    gulv: { del: 'gulv', luft: true, L: [['Parkett', 14, 0.13], ['Sponplate', 22, 0.13], ['Mineralull', 250, 0.035], ['Vindsperreplate, mineralull', 30, 0.033]] }
+  };
+  let uLayers = [];
+  function loadPreset() {
+    const p = PRESETS[$('uv-preset').value];
+    uLayers = p.L.map(l => ({ name: l[0], d: l[1], lam: l[2] }));
+    $('uv-del').value = p.del; $('uv-luft').checked = p.luft;
+    renderLayerTable(); uverdi();
+  }
+  function renderLayerTable() {
+    $('uv-layers').innerHTML = `<div class="lrow lhead"><span>Sjikt (innenfra)</span><span>d (mm)</span><span>λ (W/mK)</span><span></span></div>` + uLayers.map((l, i) =>
+      `<div class="lrow"><input type="text" id="uv-n${i}" value="${esc(l.name)}" aria-label="Navn på sjikt ${i + 1}"><input type="number" id="uv-d${i}" value="${l.d}" min="0.1" max="1000" step="0.5" aria-label="Tykkelse sjikt ${i + 1} i mm"><input type="number" id="uv-l${i}" value="${l.lam}" min="0.001" max="60" step="0.001" aria-label="λ sjikt ${i + 1}"><button type="button" data-del="${i}" aria-label="Fjern sjikt ${i + 1}">×</button></div>`).join('');
+    uLayers.forEach((l, i) => {
+      $('uv-n' + i).addEventListener('input', e => { l.name = e.target.value; uverdi(); });
+      $('uv-d' + i).addEventListener('input', e => { const v = parseFloat(e.target.value); if (v > 0) { l.d = v; uverdi(); } });
+      $('uv-l' + i).addEventListener('input', e => { const v = parseFloat(e.target.value); if (v > 0) { l.lam = v; uverdi(); } });
+    });
+    $('uv-layers').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { if (uLayers.length > 1) { uLayers.splice(+b.dataset.del, 1); renderLayerTable(); uverdi(); } }));
+  }
+  function uverdi() {
+    const del = $('uv-del').value, ti = +$('uv-ti').value, te = +$('uv-te').value, luft = $('uv-luft').checked, therm = $('uv-therm').checked;
+    $('uv-ti-o').textContent = ti + ' °C'; $('uv-te-o').textContent = te + ' °C';
+    const [Rsi, Rse0] = RS[del], Rse = luft ? Rsi : Rse0;
+    const L = uLayers.filter(l => l.d > 0 && l.lam > 0).map(l => ({ ...l, R: l.d / 1000 / l.lam }));
+    const RT = Rsi + L.reduce((s, l) => s + l.R, 0) + Rse, U = 1 / RT, q = U * (ti - te);
+    // Temperaturer i overgangene
+    const temps = [ti]; let t = ti - q * Rsi; temps.push(t);
+    L.forEach(l => { t -= q * l.R; temps.push(t); }); temps.push(te);
+    // Tegning
+    const x0 = 60, x1 = 600, filmPx = therm ? null : 22;
+    const segs = [{ name: 'R_si', R: Rsi, film: true }, ...L.map(l => ({ ...l })), { name: 'R_se', R: Rse, film: true }];
+    let widths;
+    if (therm) widths = segs.map(s => s.R / RT * (x1 - x0));
+    else { const dTot = L.reduce((s, l) => s + l.d, 0), avail = x1 - x0 - 2 * filmPx; widths = segs.map(s => s.film ? filmPx : Math.max(3, s.d / dTot * avail)); const sc = (x1 - x0) / widths.reduce((a, b) => a + b, 0); widths = widths.map(w => w * sc); }
+    const yT = v => 40 + (ti + 2 - v) / (ti - te + 4) * 230;
+    let s = '', x = x0; const xs = [x0];
+    segs.forEach((sg, i) => {
+      const w = widths[i];
+      if (sg.film) s += rect(x, 30, w, 250, '#1d2329');
+      else { const insl = sg.lam < 0.06, conc = sg.lam > 1; s += rect(x, 30, w, 250, insl ? C.insFill : conc ? C.concFill : C.woodFill, '#0e1113'); if (insl) for (let yy = 38; yy < 280; yy += 16) s += path([[x + 2, yy], [x + w / 4, yy + 6], [x + w / 2, yy], [x + 3 * w / 4, yy + 6], [x + w - 2, yy]], C.ins, 0.8, null, 'none', 0.5); }
+      x += w; xs.push(x);
+    });
+    s += line(x0, 30, x0, 280, C.mu) + line(x1, 30, x1, 280, C.mu);
+    s += txt(x0 - 6, 22, 'inne', { a: 'start', s: 11 }) + txt(x1 + 4, 22, 'ute', { a: 'end', s: 11 });
+    // Temperaturprofil
+    const pts = xs.map((xx, i) => [xx, yT(temps[i])]);
+    s += line(x0, yT(0), x1, yT(0), C.mu, 1, '2 4') + txt(x1 - 2, yT(0) - 4, '0 °C', { a: 'end', s: 10 });
+    s += path(pts, C.r, 2.6);
+    pts.forEach((p, i) => { s += `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${C.r}"/>`; });
+    s += txt(xs[1] + 4, yT(temps[1]) - 8, 'θsi = ' + n(temps[1], 1) + ' °C', { c: C.fg, s: 11 });
+    s += txt(xs[xs.length - 2] - 4, yT(temps[temps.length - 2]) + 16, n(temps[temps.length - 2], 1) + ' °C', { a: 'end', c: C.fg, s: 11 });
+    // Etiketter for sjikt
+    segs.forEach((sg, i) => { if (!sg.film && widths[i] > 34) s += `<text x="${xs[i] + widths[i] / 2}" y="296" fill="${C.mu}" font-size="10" text-anchor="middle">${n(sg.R, 2)}</text>`; });
+    s += txt(x0, 314, therm ? 'Bredde = varmemotstand R. Temperaturen faller da lineært.' : 'Bredde = tykkelse (overgangsmotstandene vist som smale felt). Tallene under er R i m²K/W.', { s: 10 });
+    // U mot krav
+    const [kE, kM] = KRAV[del];
+    $('uv-svg').innerHTML = s;
+    const rows = L.map(l => `  ${esc(l.name).padEnd(30).slice(0, 30)} d = ${n(l.d, 1).padStart(6)} mm   λ = ${n(l.lam, 3)}   R = d/λ = ${n(l.R, 3)} m²K/W`).join('\n');
+    $('uv-calc').textContent =
+`R_si = ${n(Rsi, 2)}   R_se = ${n(Rse, 2)}${luft ? ' (luftet: R_se = R_si)' : ''}   m²K/W
+${rows}
+R_T = R_si + ΣR + R_se = ${n(Rsi, 2)} + ${n(RT - Rsi - Rse, 3)} + ${n(Rse, 2)} = ${n(RT, 3)} m²K/W
+U = 1/R_T = 1/${n(RT, 3)} = ${n(U, 3)} W/(m²K)
+q = U·(θi − θe) = ${n(U, 3)}·${n(ti - te, 0)} = ${n(q, 2)} W/m²     θsi = θi − R_si·q = ${n(temps[1], 2)} °C
+TEK17 ${DELNAVN[del]}: energitiltak § 14-2 ≤ ${n(kE, 2)} → ${U <= kE + 1e-9 ? 'oppfylt' : 'ikke oppfylt'}   minimumskrav § 14-3 ≤ ${n(kM, 2)} → ${U <= kM + 1e-9 ? 'oppfylt' : 'ikke oppfylt'}${del === 'vegg' && $('uv-preset').value !== 'betong' ? '\nMerk: stendere er ikke med her. Se neste modul for U-verdi med treandel.' : ''}`;
+    window.__uLast = { U, RT, temps };
+  }
+  bind(['uv-del', 'uv-ti', 'uv-te', 'uv-luft', 'uv-therm'], uverdi);
+  $('uv-preset').addEventListener('change', loadPreset); $('uv-preset').addEventListener('input', loadPreset);
+  $('uv-add').addEventListener('click', () => { uLayers.push({ name: 'Nytt sjikt', d: 50, lam: 0.035 }); renderLayerTable(); uverdi(); });
+
+  // ---------- 2. Sammensatte sjikt (ISO 6946 kombinert metode) ----------
+  const LAM_TRE = 0.13, LAM_GIPS = 0.25;
+  function iso6946(layers, Rsi, Rse) {
+    // layers: {d (m), lam} homogent eller {d, lamA (isolasjon), lamB (tre), f (treandel)} inhomogent
+    const inh = layers.filter(l => l.f !== undefined);
+    const nS = 1 << inh.length; let sumUA = 0; const sections = [];
+    for (let m = 0; m < nS; m++) {
+      let frac = 1, R = Rsi + Rse, k = 0; const desc = [];
+      layers.forEach(l => {
+        if (l.f === undefined) { R += l.d / l.lam; return; }
+        const wood = (m >> k) & 1; k++;
+        frac *= wood ? l.f : 1 - l.f; R += l.d / (wood ? l.lamB : l.lamA); desc.push(wood ? 'tre' : 'iso');
+      });
+      if (frac > 0) { sumUA += frac / R; sections.push({ frac, R, desc: desc.join('/') }); }
+    }
+    const Rup = 1 / sumUA;
+    let Rlow = Rsi + Rse; const eq = [];
+    layers.forEach(l => { if (l.f === undefined) Rlow += l.d / l.lam; else { const le = l.f * l.lamB + (1 - l.f) * l.lamA; eq.push({ d: l.d, le }); Rlow += l.d / le; } });
+    const RT = (Rup + Rlow) / 2;
+    return { Rup, Rlow, RT, U: 1 / RT, e: (Rup - Rlow) / (2 * RT), sections, eq };
+  }
+  function sammensatt() {
+    const [b, h] = $('s2-st').value.split('x').map(Number), cc = +$('s2-cc').value, ex = +$('s2-ex').value / 100, li = +$('s2-li').value, pa = +$('s2-pa').value, ut = +$('s2-ut').value;
+    $('s2-cc-o').textContent = cc + ' mm'; $('s2-ex-o').textContent = Math.round(ex * 100) + ' %'; $('s2-li-o').textContent = n(li, 3);
+    const f = Math.min(1, b / cc + ex), fpa = 48 / 600;
+    const layers = [{ d: 0.0125, lam: LAM_GIPS }];
+    if (pa) layers.push({ d: pa / 1000, lamA: li, lamB: LAM_TRE, f: fpa, name: 'påforing' });
+    layers.push({ d: h / 1000, lamA: li, lamB: LAM_TRE, f, name: 'stendersjikt' });
+    if (ut) layers.push({ d: ut / 1000, lam: li });
+    const Rsi = 0.13, Rse = 0.13;
+    const r = iso6946(layers, Rsi, Rse);
+    const r0 = iso6946(layers.map(l => l.f !== undefined ? { d: l.d, lam: l.lamA } : l), Rsi, Rse);
+    // Tegning: plansnitt av to stenderfelt + søyler
+    const x0 = 30, wsec = 300, y0 = 40, sc = 180 / 0.36;
+    let s = '', yy = y0;
+    const tot = layers.reduce((a, l) => a + l.d, 0);
+    const kpx = 240 / Math.max(tot, 0.36);
+    s += txt(x0, 24, 'Plansnitt, to stenderfelt (inne øverst)', { s: 11, c: C.fg });
+    const wcc = wsec / 2, wst = Math.max(3, b / cc * wcc);
+    layers.forEach(l => {
+      const hh = l.d * kpx;
+      if (l.f === undefined) s += rect(x0, yy, wsec, hh, l.lam > 0.1 ? '#5b5f63' : C.insFill, '#0e1113');
+      else {
+        s += rect(x0, yy, wsec, hh, C.insFill, '#0e1113');
+        if (l.name === 'stendersjikt') [0.5, 1.5].forEach(k => { s += rect(x0 + k * wcc - wst / 2, yy, wst, hh, C.woodFill, C.wood); });
+        else s += rect(x0, yy + hh * 0.2, wsec, hh * 0.6, C.woodFill, C.wood, 0.55);
+      }
+      yy += hh;
+    });
+    // Varmebaner
+    const ys = y0, ye = yy;
+    s += path([[x0 + wcc, ys - 6], [x0 + wcc, ye + 6]], C.b, 2, '5 4') + txt(x0, ye + 34, '┆ bane gjennom isolasjon', { s: 10, c: C.b });
+    s += path([[x0 + 0.5 * wcc, ys - 6], [x0 + 0.5 * wcc, ye + 6]], C.r, 2.5) + txt(x0, ye + 20, '│ bane gjennom stender', { s: 10, c: C.r });
+    s += txt(x0, ye + 52, `treandel stendersjikt f = ${n(f * 100, 1)} %`, { s: 11, c: C.fg });
+    // Søyler: U for grensene
+    const bx = 370, bw = 42, by = 280, Umax = 0.30, ks = 220 / Umax;
+    const bars = [['uten tre', 1 / r0.RT, C.mu], ["R′ øvre", 1 / r.Rup, C.b], ['R″ nedre', 1 / r.Rlow, C.r], ['R_T snitt', r.U, C.a]];
+    s += txt(bx, 24, 'U-verdi (W/m²K)', { s: 11, c: C.fg });
+    [0.1, 0.2, 0.3].forEach(v => { s += line(bx - 4, by - v * ks, bx + 4 * (bw + 12), by - v * ks, C.grid) + txt(bx - 6, by - v * ks + 4, n(v, 1), { a: 'end', s: 10 }); });
+    bars.forEach(([lab, v, col], i) => { const x = bx + 6 + i * (bw + 12), hgt = Math.min(v, Umax) * ks; s += rect(x, by - hgt, bw, hgt, col, 'none', 0.85) + txt(x + bw / 2, by - hgt - 5, n(v, 3), { a: 'middle', s: 11, c: C.fg }) + txt(x + bw / 2, by + 14, lab, { a: 'middle', s: 10 }); });
+    [[0.18, '§ 14-2'], [0.22, '§ 14-3']].forEach(([v, lab]) => { s += line(bx, by - v * ks, bx + 4 * (bw + 12) + 4, by - v * ks, C.g, 1.2, '5 3') + txt(bx + 4 * (bw + 12) + 8, by - v * ks + 4, lab, { s: 10, c: C.g }); });
+    s += line(bx, by, bx + 4 * (bw + 12), by, C.mu);
+    $('s2-svg').innerHTML = s;
+    const secTxt = r.sections.map(sc2 => `  ${sc2.desc.padEnd(8)} andel ${n(sc2.frac * 100, 1).padStart(5)} %   R = ${n(sc2.R, 3)} m²K/W`).join('\n');
+    const eqTxt = r.eq.map(q => `  λ″ = f·λ_tre + (1 − f)·λ_iso = ${n(q.le, 4)} W/mK over ${n(q.d * 1000, 0)} mm`).join('\n');
+    $('s2-calc').textContent =
+`Treandel stendersjikt f = b/c/c + ekstra = ${b}/${cc} + ${n(ex * 100, 0)} % = ${n(f * 100, 1)} %${pa ? `.  Påforing: lekter 48/600 = ${n(fpa * 100, 1)} % (kryssende)` : ''}
+Øvre grense, parallelle baner:  1/R′ = Σ f_j/R_j
+${secTxt}
+  R′ = ${n(r.Rup, 3)} m²K/W
+Nedre grense, midlere λ per sjikt:
+${eqTxt}
+  R″ = ${n(r.Rlow, 3)} m²K/W
+R_T = (R′ + R″)/2 = (${n(r.Rup, 3)} + ${n(r.Rlow, 3)})/2 = ${n(r.RT, 3)} m²K/W     e = (R′ − R″)/(2R_T) = ${n(r.e * 100, 1)} %
+U = 1/R_T = ${n(r.U, 3)} W/(m²K)   (uten stendere ${n(1 / r0.RT, 3)}, økning ${n((r.U * r0.RT - 1) * 100, 0)} %)
+TEK17 yttervegg: § 14-2 ≤ 0,18 → ${r.U <= 0.18 + 1e-9 ? 'oppfylt' : 'ikke oppfylt'}   § 14-3 ≤ 0,22 → ${r.U <= 0.22 + 1e-9 ? 'oppfylt' : 'ikke oppfylt'}`;
+    window.__s2Last = r;
+  }
+  bind(['s2-st', 's2-cc', 's2-ex', 's2-li', 's2-pa', 's2-ut'], sammensatt);
+
+  // ---------- 3. Glaser ----------
+  const DELTA0 = 2e-10;
+  function glaserCalc(o) {
+    // Sjikt fra innsiden: {name, d (m), lam, sd (m), membr}
+    const L = [{ name: 'Gips', d: 0.0125, lam: 0.25, sd: 10 * 0.0125 }, { name: 'Dampsperre', d: 0.0002, lam: 0.2, sd: o.sdi, membr: true }, { name: 'Mineralull', d: o.d / 1000, lam: 0.035, sd: o.d / 1000 }];
+    if (o.u) L.push({ name: 'Utv. isolasjon', d: o.u / 1000, lam: 0.033, sd: o.u / 1000 });
+    L.push({ name: 'Vindsperre', d: 0.0005, lam: 0.2, sd: o.sde, membr: true });
+    const Rsi = 0.13, Rse = 0.13; // luftet kledning utenfor vindsperra
+    L.forEach(l => { l.R = l.d / l.lam; });
+    const RT = Rsi + L.reduce((s, l) => s + l.R, 0) + Rse, q = (o.ti - o.te) / RT;
+    const pi = o.ri / 100 * psat(o.ti), pe = o.re / 100 * psat(o.te);
+    // Prøvepunkter gjennom veggen: (s, θ, x, sjiktindeks)
+    const P = []; let th = o.ti - q * Rsi, s = 0, x = 0;
+    L.forEach((l, k) => {
+      const N = l.membr ? 2 : 24;
+      for (let i = 0; i <= N; i++) { if (i === 0 && P.length) continue; const t = i / N; P.push({ s: s + t * l.sd, th: th - t * q * l.R, x: x + t * l.d, k }); }
+      s += l.sd; th -= q * l.R; x += l.d;
+    });
+    const S = s, X = x;
+    // Damptrykk = største konvekse minorant (nedre konvekse hylster) av {(0,pi), (s, psat), (S, pe)}
+    const pts = [{ s: 0, p: pi, end: true }, ...P.map(pp => ({ s: pp.s, p: psat(pp.th) })), { s: S, p: pe, end: true }];
+    const hull = [];
+    pts.forEach(pt => {
+      while (hull.length >= 2) { const a = hull[hull.length - 2], b2 = hull[hull.length - 1]; const cr = (b2.s - a.s) * (pt.p - a.p) - (b2.p - a.p) * (pt.s - a.s); if (cr <= 0) hull.pop(); else break; }
+      hull.push(pt);
+    });
+    const pAt = sv => { for (let i = 1; i < hull.length; i++) if (sv <= hull[i].s + 1e-12) { const a = hull[i - 1], b2 = hull[i]; return b2.s - a.s < 1e-15 ? b2.p : a.p + (b2.p - a.p) * (sv - a.s) / (b2.s - a.s); } return hull[hull.length - 1].p; };
+    // Kondenssoner: indre hylsterpunkter
+    const contacts = hull.map((h2, i) => ({ ...h2, i })).filter(h2 => !h2.end && h2.i > 0 && h2.i < hull.length - 1);
+    let gc = 0; const zones = [];
+    if (contacts.length) {
+      // grupper sammenhengende kontaktpunkter
+      let cur = [contacts[0]];
+      for (let i = 1; i < contacts.length; i++) { if (contacts[i].i === contacts[i - 1].i + 1) cur.push(contacts[i]); else { zones.push(cur); cur = [contacts[i]]; } }
+      zones.push(cur);
+      zones.forEach(z => {
+        const a = hull[z[0].i - 1], f = hull[z[0].i], l2 = hull[z[z.length - 1].i], b2 = hull[z[z.length - 1].i + 1];
+        const gin = DELTA0 * (a.p - f.p) / Math.max(f.s - a.s, 1e-12), gout = DELTA0 * (l2.p - b2.p) / Math.max(b2.s - l2.s, 1e-12);
+        z.g = Math.max(0, gin - gout); gc += z.g;
+        const sMid = (f.s + l2.s) / 2; z.where = P.reduce((best, pp) => Math.abs(pp.s - sMid) < Math.abs(best.s - sMid) ? pp : best, P[0]);
+      });
+    }
+    const flux = DELTA0 * (pi - pe) / S;
+    const thsi = o.ti - q * Rsi; // med R_si = 0,13 for profilen
+    const thsi25 = o.ti - (o.ti - o.te) / (RT - Rsi + 0.25) * 0.25;
+    return { L, RT, q, pi, pe, P, S, X, hull, pAt, zones, gc, flux, thsi, thsi25, Rsi, Rse };
+  }
+  function glaser() {
+    const o = { ti: +$('g2-ti').value, ri: +$('g2-ri').value, te: +$('g2-te').value, re: +$('g2-re').value, d: +$('g2-d').value, u: +$('g2-u').value, sdi: +$('g2-sdi').value, sde: +$('g2-sde').value };
+    $('g2-ti-o').textContent = o.ti + ' °C'; $('g2-ri-o').textContent = o.ri + ' %'; $('g2-te-o').textContent = o.te + ' °C'; $('g2-re-o').textContent = o.re + ' %';
+    const G = glaserCalc(o);
+    // x-akse: tykkelse, membraner vises med minimumsbredde
+    const x0 = 70, x1 = 600, memW = 8;
+    const realW = G.L.map(l => l.membr ? 0 : l.d), sumReal = realW.reduce((a, b2) => a + b2, 0), nMem = G.L.filter(l => l.membr).length;
+    const pxPerM = (x1 - x0 - nMem * memW) / sumReal;
+    const lx = []; let xx = x0; G.L.forEach(l => { const w = l.membr ? memW : l.d * pxPerM; lx.push([xx, xx + w]); xx += w; });
+    const X = (k, t) => lx[k][0] + t * (lx[k][1] - lx[k][0]);
+    // Punkter til tegning
+    const pts = []; let s0 = 0;
+    G.L.forEach((l, k) => { const N = l.membr ? 2 : 24; for (let i = 0; i <= N; i++) { const t = i / N, sv = s0 + t * l.sd, th = G.thsi - G.q * (G.L.slice(0, k).reduce((a, b2) => a + b2.R, 0) + t * l.R); pts.push({ x: X(k, t), s: sv, th, ps: psat(th), p: G.pAt(sv), k }); } s0 += l.sd; });
+    let s = '';
+    // Sjiktbakgrunn
+    G.L.forEach((l, k) => { const col = l.name === 'Gips' ? '#2a2f34' : l.membr ? (l.sd >= 5 ? '#3a4b5a' : '#2c3238') : C.insFill; s += rect(lx[k][0], 22, lx[k][1] - lx[k][0], 392, col, '#0e1113', 0.8); });
+    G.L.forEach((l, k) => { const w = lx[k][1] - lx[k][0]; if (w > 40) s += txt((lx[k][0] + lx[k][1]) / 2, 16, l.name, { a: 'middle', s: 10 }); else s += `<text x="${(lx[k][0] + lx[k][1]) / 2}" y="16" fill="${C.mu}" font-size="9" text-anchor="middle">${l.name === 'Dampsperre' ? 'DS' : l.name === 'Vindsperre' ? 'VS' : ''}</text>`; });
+    s += txt(x0 - 6, 16, 'inne', { a: 'end', s: 10 }) + txt(x1 + 4, 16, 'ute', { s: 10 });
+    // Temperatur (øverst)
+    const tTop = 34, tH = 120, tmax = o.ti + 2, tmin = o.te - 2, YT = v => tTop + (tmax - v) / (tmax - tmin) * tH;
+    s += txt(8, tTop + 6, 'θ (°C)', { s: 10 });
+    [o.ti, 0, o.te].forEach(v => { s += line(x0, YT(v), x1, YT(v), C.grid) + txt(x0 - 6, YT(v) + 4, n(v, 0), { a: 'end', s: 10 }); });
+    s += path(pts.map(p => [p.x, YT(p.th)]), C.r, 2.4);
+    // Damptrykk (nederst)
+    const pTop = 190, pH = 210, pmax = Math.max(psat(o.ti), G.pi) * 1.05, YP = v => pTop + (pmax - v) / pmax * pH;
+    s += txt(8, pTop + 6, 'p (Pa)', { s: 10 });
+    const step = pmax > 2000 ? 500 : 250;
+    for (let v = 0; v <= pmax; v += step) s += line(x0, YP(v), x1, YP(v), C.grid) + txt(x0 - 6, YP(v) + 4, n(v, 0), { a: 'end', s: 10 });
+    // Rett linje (uten kondens)
+    const straight = pts.map(p => [p.x, YP(G.pi - (G.pi - G.pe) * p.s / G.S)]);
+    s += path(straight, C.r, 1.3, '5 4', 'none', 0.8);
+    s += path(pts.map(p => [p.x, YP(p.ps)]), C.b, 2.4);
+    s += path(pts.map(p => [p.x, YP(p.p)]), C.a, 2.6);
+    // Kondenssoner
+    G.zones.forEach(z => { const p = pts.reduce((best, pp) => Math.abs(pp.s - z.where.s) < Math.abs(best.s - z.where.s) ? pp : best, pts[0]); s += `<circle cx="${p.x}" cy="${YP(p.p)}" r="7" fill="none" stroke="${C.r}" stroke-width="2.5"/>` + txt(p.x - 10, YP(p.p) - 12, 'kondens', { a: 'end', c: C.r, s: 11, w: 600 }); });
+    // Forklaring
+    const lg = [[C.b, 'p_sat (metning)'], [C.a, 'p (damptrykk)'], [C.r, 'rett linje uten kondens', '5 4']];
+    lg.forEach(([col, lab, dash], i) => { s += line(x0 + 6 + i * 170, 172, x0 + 30 + i * 170, 172, col, 2.4, dash) + txt(x0 + 36 + i * 170, 176, lab, { s: 10 }); });
+    $('g2-svg').innerHTML = s;
+    const dp = dewpoint(G.pi);
+    const lines = G.L.map(l => `  ${l.name.padEnd(19)} d = ${n(l.d * 1000, 1).padStart(6)} mm   R = ${n(l.R, 3)}   s_d = ${n(l.sd, 3)} m`).join('\n');
+    const zoneTxt = G.zones.length ? G.zones.map(z => `  Kondens i/ved ${G.L[z.where.k].name.toLowerCase()} (θ ≈ ${n(z.where.th, 1)} °C): g_c = ${n(z.g * 86400 * 1000, 1)} g/(m²·døgn)`).join('\n') : '  Ingen kondens: damptrykket holder seg under metningstrykket gjennom hele veggen ✓';
+    $('g2-calc').textContent =
+`p_i = RF·p_sat(θi) = ${n(o.ri / 100, 2)}·${n(psat(o.ti), 0)} = ${n(G.pi, 0)} Pa     p_e = ${n(o.re / 100, 2)}·${n(psat(o.te), 0)} = ${n(G.pe, 0)} Pa
+${lines}
+R_T = ${n(G.RT, 3)} m²K/W (R_si = 0,13, R_se = 0,13 bak luftet kledning)     Σs_d = ${n(G.S, 2)} m
+Diffusjon uten kondens: g = δ0·(p_i − p_e)/Σs_d = 2·10⁻¹⁰·${n(G.pi - G.pe, 0)}/${n(G.S, 2)} = ${n(G.flux * 86400 * 1000, 2)} g/(m²·døgn)
+${zoneTxt}
+Innvendig overflate: duggpunkt ${n(dp, 1)} °C, θsi (R_si = 0,25) = ${n(G.thsi25, 1)} °C → ${G.thsi25 > dp ? 'ingen overflatekondens ✓' : 'overflatekondens'}`;
+    window.__gLast = G;
+  }
+  bind(['g2-ti', 'g2-ri', 'g2-te', 'g2-re', 'g2-d', 'g2-u', 'g2-sdi', 'g2-sde'], glaser);
+
+  // ---------- 4. Kuldebro: 2D stasjonær varmeledning ----------
+  // Celletyper: 0 = inneluft, 1 = uteluft, 2 = utenfor domenet (adiabatisk), >= 3 materialindeks
+  const AIR_IN = 0, AIR_OUT = 1, NONE = 2;
+  function buildDetail(det, o) {
+    const mats = [null, null, null]; const addM = (name, lam, col) => { mats.push({ name, lam, col }); return mats.length - 1; };
+    let h, nx, ny, cell, Rse = 0.04, ref, info = {};
+    if (det === 'stender') {
+      h = 0.004;
+      const GIPS = addM('Gips', 0.25, '#6b6f73'), INS = addM('Mineralull', 0.035, C.insFill), TRE = addM('Tre', 0.13, C.woodFill), UTI = addM('Utvendig isolasjon', 0.033, C.insFill);
+      const b = o.st, cc = 0.6;
+      const lay = [[GIPS, 3], [INS, 50]]; if (o.ut) lay.push([UTI, Math.round(o.ut / 1000 / h)]);
+      const wc = lay.reduce((a, l) => a + l[1], 0);
+      nx = 1 + wc + 1; ny = Math.round(cc / h); const stc = Math.round(b / 1000 / h), st0 = Math.round((ny - stc) / 2);
+      cell = new Uint8Array(nx * ny);
+      for (let j = 0; j < ny; j++) {
+        cell[j * nx] = AIR_IN; cell[j * nx + nx - 1] = AIR_OUT;
+        let i = 1; lay.forEach(([m, c2], li) => { for (let k = 0; k < c2; k++, i++) cell[j * nx + i] = (m === INS && j >= st0 && j < st0 + stc) ? TRE : m; });
+      }
+      Rse = 0.13;
+      const R0 = 0.13 + lay.reduce((a, [m, c2]) => a + c2 * h / mats[m].lam, 0) + Rse;
+      ref = { U0: 1 / R0, len: cc, lenTxt: 'c/c 0,6 m', R0 };
+      // ISO 6946 med samme diskretiserte sjikt
+      const L6946 = lay.map(([m, c2]) => m === INS ? { d: c2 * h, lamA: 0.035, lamB: 0.13, f: stc / ny } : { d: c2 * h, lam: mats[m].lam });
+      info.iso = iso6946(L6946, 0.13, Rse); info.f = stc / ny;
+      info.inSide = 'left';
+    } else if (det === 'hjorne') {
+      h = 0.01;
+      let lay;
+      if (o.vt === 'bv') { const G2 = addM('Gips', 0.25, '#6b6f73'), I2 = addM('Bindingsverk, λ_ekv', 0.045, C.insFill); lay = [[G2, 1], [I2, 20]]; }
+      else if (o.vt === 'bet') { const B = addM('Betong', 2.5, C.concFill), I2 = addM('Isolasjon', 0.035, C.insFill); lay = [[B, 20], [I2, 15]]; }
+      else { const T = addM('Tegl', 0.6, '#5a3a32'); lay = [[T, 25]]; }
+      const tc = lay.reduce((a, l) => a + l[1], 0), Li = Math.round(1.0 / h);
+      nx = Li + tc + 1; ny = nx; cell = new Uint8Array(nx * ny);
+      const bounds = []; let acc = 0; lay.forEach(([m, c2]) => { bounds.push([acc, acc + c2, m]); acc += c2; });
+      const matAt = dpth => { for (const [a, b2, m] of bounds) if (dpth >= a && dpth < b2) return m; return AIR_OUT; };
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const dx = i - Li, dy = j - Li;
+        let c3;
+        if (dx < 0 && dy < 0) c3 = AIR_IN;
+        else c3 = matAt(Math.max(dx, dy));
+        cell[j * nx + i] = c3;
+      }
+      const R0 = 0.13 + lay.reduce((a, [m, c2]) => a + c2 * h / mats[m].lam, 0) + 0.04;
+      ref = { U0: 1 / R0, len: 2 * Li * h, lenTxt: '2 × 1,0 m innvendig', R0, lenE: 2 * (Li + tc) * h };
+      info.corner = true;
+    } else {
+      h = 0.02;
+      const BET = addM('Betong', 2.5, C.concFill), ISO = addM('Isolasjon', 0.035, C.insFill), KB = addM('Kuldebrobryter (ekv.)', o.lkb, '#4b3f5c');
+      const xin = 50, tw = 10, ti2 = 10, hs = 11, hRoom = 50; // celler: 1,0 m inne, betong 200, isolasjon 200, dekke 220, 1,0 m over/under
+      const xbal = o.bv === 'iso' ? 0 : 60;
+      nx = xin + tw + ti2 + xbal + 1; ny = hRoom + hs + hRoom;
+      cell = new Uint8Array(nx * ny);
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const slab = j >= hRoom && j < hRoom + hs;
+        let c3;
+        if (i < xin) c3 = slab ? BET : AIR_IN;
+        else if (i < xin + tw) c3 = BET;
+        else if (i < xin + tw + ti2) c3 = (slab && o.bv !== 'iso') ? (o.bv === 'kb' && i < xin + tw + 4 ? KB : BET) : ISO;
+        else c3 = (slab && o.bv !== 'iso' && i < nx - 1) ? BET : AIR_OUT;
+        cell[j * nx + i] = c3;
+      }
+      const R0 = 0.13 + tw * h / 2.5 + ti2 * h / 0.035 + 0.04;
+      ref = { U0: 1 / R0, len: 2 * hRoom * h, lenTxt: '2 × 1,0 m vegg (innvendig, over og under dekket)', R0 };
+      info.slab = true;
+    }
+    return { h, nx, ny, cell, mats, Rse, ref, info };
+  }
+  function solveField(D, Rsi, ti, te, guess) {
+    const { h, nx, ny, cell, mats, Rse } = D, N = nx * ny;
+    const T = guess && guess.length === N ? Float64Array.from(guess) : new Float64Array(N).fill((ti + te) / 2);
+    const isSolid = c3 => c3 >= 3;
+    const gE = new Float64Array(N), gW = new Float64Array(N), gN = new Float64Array(N), gS = new Float64Array(N), gA = new Float64Array(N), bA = new Float64Array(N), gIn = new Float64Array(N);
+    const kOf = c3 => mats[c3].lam;
+    const face = (c1, c2) => { // konduktans per m dybde mellom celle c1 (fast stoff) og nabo
+      if (isSolid(c2)) { const k1 = kOf(c1), k2 = kOf(c2); return { g: 2 * k1 * k2 / (k1 + k2), kind: 's' }; }
+      if (c2 === AIR_IN) return { g: h / (Rsi + h / 2 / kOf(c1)), kind: 'in' };
+      if (c2 === AIR_OUT) return { g: h / (Rse + h / 2 / kOf(c1)), kind: 'out' };
+      return { g: 0, kind: 'n' };
+    };
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const p = j * nx + i, c1 = cell[p]; if (!isSolid(c1)) continue;
+      const nb = [[i + 1, j, gE], [i - 1, j, gW], [i, j - 1, gN], [i, j + 1, gS]];
+      nb.forEach(([ii, jj, arr]) => {
+        const c2 = ii < 0 || jj < 0 || ii >= nx || jj >= ny ? NONE : cell[jj * nx + ii];
+        const f = face(c1, c2);
+        if (f.kind === 's') arr[p] = f.g;
+        else if (f.kind === 'in') { gA[p] += f.g; bA[p] += f.g * ti; gIn[p] += f.g; }
+        else if (f.kind === 'out') { gA[p] += f.g; bA[p] += f.g * te; }
+      });
+    }
+    const idx = []; for (let p = 0; p < N; p++) if (isSolid(cell[p])) idx.push(p);
+    const omega = 2 / (1 + Math.sin(Math.PI / Math.max(nx, ny))) * 0.995;
+    let it = 0, maxd = 0;
+    for (it = 0; it < 30000; it++) {
+      maxd = 0;
+      for (let q = 0; q < idx.length; q++) {
+        const p = idx[q];
+        const sg = gE[p] + gW[p] + gN[p] + gS[p] + gA[p];
+        const num = (gE[p] ? gE[p] * T[p + 1] : 0) + (gW[p] ? gW[p] * T[p - 1] : 0) + (gN[p] ? gN[p] * T[p - nx] : 0) + (gS[p] ? gS[p] * T[p + nx] : 0) + bA[p];
+        const nt = num / sg, d = nt - T[p];
+        T[p] += omega * d; if (Math.abs(d) > maxd) maxd = Math.abs(d);
+      }
+      if (maxd < 5e-8 * Math.abs(ti - te) && it > 20) break;
+    }
+    // Varmestrøm inn fra innsiden og ut på utsiden (W/m)
+    let Qin = 0, Qout = 0, tsMin = Infinity, pMin = -1;
+    for (const p of idx) {
+      if (gIn[p] > 0) { const qf = gIn[p] * (ti - T[p]); Qin += qf; }
+      const i = p % nx, j = (p - i) / nx;
+      [[i + 1, j], [i - 1, j], [i, j - 1], [i, j + 1]].forEach(([ii, jj]) => {
+        if (ii < 0 || jj < 0 || ii >= nx || jj >= ny) return;
+        const c2 = cell[jj * nx + ii];
+        if (c2 === AIR_IN) { const gf = h / (Rsi + h / 2 / mats[cell[p]].lam); const ts = ti - gf * (ti - T[p]) / h * Rsi; if (ts < tsMin) { tsMin = ts; pMin = p; } }
+        if (c2 === AIR_OUT) { const gf = h / (Rse + h / 2 / mats[cell[p]].lam); Qout += gf * (T[p] - te); }
+      });
+    }
+    return { T, Qin, Qout, tsMin, pMin, it, maxd };
+  }
+  let k2Cache = {};
+  function kuldebroCompute() {
+    const det = $('k2-det').value;
+    const o = { st: +$('k2-st').value, ut: +$('k2-ut').value, vt: $('k2-vt').value, bv: $('k2-bv').value, lkb: +$('k2-lkb').value };
+    const ti = +$('k2-ti').value, te = +$('k2-te').value;
+    const key = JSON.stringify([det, o]);
+    const D = buildDetail(det, o);
+    const prev = k2Cache.key === key ? k2Cache : null;
+    // Løs med ΔT = 1 (lineært), skaler etterpå
+    const s13 = prev ? prev.s13 : solveField(D, 0.13, 1, 0);
+    const s25 = prev ? prev.s25 : solveField(D, 0.25, 1, 0, s13.T);
+    k2Cache = { key, s13, s25, D };
+    return { det, o, D, s13, s25, ti, te };
+  }
+  function tempColor(f) { // f = 0 (ute) .. 1 (inne)
+    const stops = [[0, [43, 92, 170]], [0.25, [63, 169, 214]], [0.5, [181, 220, 76]], [0.75, [233, 180, 92]], [1, [238, 90, 111]]];
+    for (let i = 1; i < stops.length; i++) if (f <= stops[i][0]) { const [a, ca] = stops[i - 1], [b2, cb] = stops[i], t = (f - a) / (b2 - a); return ca.map((v, k) => Math.round(v + (cb[k] - v) * t)); }
+    return stops[stops.length - 1][1];
+  }
+  function kuldebro() {
+    const det = $('k2-det').value;
+    document.querySelectorAll('#kuldebro [data-k2]').forEach(el => { el.hidden = el.dataset.k2 !== det || (el.querySelector('#k2-lkb') && $('k2-bv').value !== 'kb'); });
+    $('k2-ti-o').textContent = $('k2-ti').value + ' °C'; $('k2-te-o').textContent = $('k2-te').value + ' °C'; $('k2-rf-o').textContent = $('k2-rf').value + ' %'; $('k2-lkb-o').textContent = n(+$('k2-lkb').value, 2);
+    const R = kuldebroCompute(), { D, s13, s25, ti, te } = R, dT = ti - te, rf = +$('k2-rf').value;
+    const { nx, ny, cell, mats, h, ref } = D;
+    // Tegning på canvas
+    const cv = $('k2-cv'), dpr = window.devicePixelRatio || 1;
+    const cssW = cv.clientWidth || 640, scale = Math.min(cssW / nx, 420 / ny), cssH = Math.round(ny * scale);
+    cv.style.height = cssH + 'px';
+    cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, cssW, cssH);
+    const off = document.createElement('canvas'); off.width = nx; off.height = ny;
+    const oc = off.getContext('2d'), img = oc.createImageData(nx, ny);
+    for (let p = 0; p < nx * ny; p++) {
+      const c3 = cell[p]; let rgb, a = 255;
+      if (c3 >= 3) rgb = tempColor(s25.T[p]);
+      else if (c3 === AIR_IN) { rgb = [32, 26, 24]; } else if (c3 === AIR_OUT) { rgb = [16, 22, 30]; } else { rgb = [14, 17, 19]; }
+      img.data.set([rgb[0], rgb[1], rgb[2], a], p * 4);
+    }
+    oc.putImageData(img, 0, 0);
+    const w = nx * scale, x0 = (cssW - w) / 2;
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(off, x0, 0, w, cssH);
+    // Materialgrenser
+    ctx.strokeStyle = 'rgba(14,17,19,0.85)'; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const c3 = cell[j * nx + i];
+      if (i + 1 < nx && cell[j * nx + i + 1] !== c3) { ctx.moveTo(x0 + (i + 1) * scale, j * scale); ctx.lineTo(x0 + (i + 1) * scale, (j + 1) * scale); }
+      if (j + 1 < ny && cell[(j + 1) * nx + i] !== c3) { ctx.moveTo(x0 + i * scale, (j + 1) * scale); ctx.lineTo(x0 + (i + 1) * scale, (j + 1) * scale); }
+    }
+    ctx.stroke();
+    // Isotermer (marching squares på cellesentre, bare fast stoff)
+    const step = dT >= 25 ? 2 : 1, levels = [];
+    for (let v = Math.ceil(te / step) * step; v < ti; v += step) if (v > te) levels.push(v);
+    const Tv = p => te + s25.T[p] * dT;
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    levels.forEach(lv => {
+      ctx.beginPath();
+      for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+        const ps = [j * nx + i, j * nx + i + 1, (j + 1) * nx + i + 1, (j + 1) * nx + i];
+        if (ps.some(p => cell[p] < 3)) continue;
+        const v = ps.map(Tv), cx = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]];
+        const pt = [];
+        for (let e = 0; e < 4; e++) { const a = v[e], b2 = v[(e + 1) % 4]; if ((a < lv) !== (b2 < lv)) { const t = (lv - a) / (b2 - a), A = cx[e], B = cx[(e + 1) % 4]; pt.push([A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t]); } }
+        for (let k = 0; k + 1 < pt.length; k += 2) { ctx.moveTo(x0 + (pt[k][0] + 0.5) * scale, (pt[k][1] + 0.5) * scale); ctx.lineTo(x0 + (pt[k + 1][0] + 0.5) * scale, (pt[k + 1][1] + 0.5) * scale); }
+      }
+      ctx.stroke();
+    });
+    // Kaldeste innvendige overflatepunkt
+    const pm = s25.pMin, mi = pm % nx, mj = (pm - mi) / nx;
+    const tsMin = te + s25.tsMin * dT, fRsi = s25.tsMin;
+    const thMin = dewpoint(rf / 100 * psat(ti) / 0.8), fReq = (thMin - te) / dT;
+    ctx.strokeStyle = fRsi >= fReq ? '#b5dc4c' : '#ee5a6f'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x0 + (mi + 0.5) * scale, (mj + 0.5) * scale, 9, 0, 2 * Math.PI); ctx.stroke();
+    ctx.font = '600 12px "IBM Plex Mono", monospace'; ctx.fillStyle = '#e8eaec'; ctx.textBaseline = 'middle';
+    const lx = x0 + (mi + 0.5) * scale, ly = (mj + 0.5) * scale, lab = `θsi,min = ${n(tsMin, 1)} °C`;
+    const tw2 = ctx.measureText(lab).width; let tx = lx - tw2 - 14; if (tx < x0 + 4) tx = lx + 14;
+    ctx.fillStyle = 'rgba(14,17,19,0.75)'; ctx.fillRect(tx - 4, ly - 10, tw2 + 8, 20); ctx.fillStyle = '#e8eaec'; ctx.fillText(lab, tx, ly);
+    // Fargeskala
+    const lgx = x0 + 8, lgy = 8, lgw = 120; for (let k = 0; k < lgw; k++) { const c4 = tempColor(k / lgw); ctx.fillStyle = `rgb(${c4[0]},${c4[1]},${c4[2]})`; ctx.fillRect(lgx + k, lgy, 1, 8); }
+    ctx.font = '11px "IBM Plex Mono", monospace'; ctx.fillStyle = '#e8eaec'; ctx.textBaseline = 'top';
+    ctx.fillText(n(te, 0) + ' °C', lgx, lgy + 11); const tl = n(ti, 0) + ' °C'; ctx.fillText(tl, lgx + lgw - ctx.measureText(tl).width, lgy + 11);
+    if (D.info.inSide) { ctx.fillStyle = '#9aa3ab'; ctx.fillText('inne', x0 + 4, cssH - 16); const u2 = 'ute'; ctx.fillText(u2, x0 + w - ctx.measureText(u2).width - 4, cssH - 16); }
+    // Tall
+    const L2D = s13.Qin, psi = L2D - ref.U0 * ref.len;
+    let c = `Rutenett ${nx} × ${ny} celler à ${n(h * 1000, 0)} mm, løst på ${s13.it} + ${s25.it} iterasjoner (varmebalanse inn/ut: ${n(s13.Qin, 4)} / ${n(s13.Qout, 4)} W/(m·K))
+L2D = Φ/ΔT = ${n(L2D, 4)} W/(m·K)   (varmestrøm per meter og grad)
+U₀ for uforstyrret konstruksjon = 1/${n(ref.R0, 3)} = ${n(ref.U0, 4)} W/(m²K), lengde ${ref.lenTxt}`;
+    if (D.info.iso) {
+      const Ueff = L2D / ref.len, r = D.info.iso;
+      c += `
+ψ per stender = L2D − U₀·c/c = ${n(L2D, 4)} − ${n(ref.U0, 4)}·0,6 = ${n(psi, 4)} W/(m·K)
+U_eff = L2D/c/c = ${n(Ueff, 4)} W/(m²K)   ISO 6946 samme sjikt: nedre/øvre grense U = ${n(1 / r.Rlow, 4)} / ${n(1 / r.Rup, 4)}, snitt ${n(r.U, 4)}
+Kontroll: numerisk U ligger mellom grensene ${Ueff <= 1 / r.Rlow + 1e-6 && Ueff >= 1 / r.Rup - 1e-6 ? '✓' : '✗'}  (treandel ${n(D.info.f * 100, 1)} %)`;
+    } else if (D.info.corner) {
+      c += `
+ψ_i = L2D − U₀·(l₁ + l₂)_innvendig = ${n(L2D, 4)} − ${n(ref.U0, 4)}·${n(ref.len, 2)} = ${n(psi, 4)} W/(m·K)
+ψ_e = L2D − U₀·(l₁ + l₂)_utvendig = ${n(L2D, 4)} − ${n(ref.U0, 4)}·${n(ref.lenE, 2)} = ${n(L2D - ref.U0 * ref.lenE, 4)} W/(m·K)`;
+    } else {
+      c += `
+ψ_i = L2D − U₀·l_vegg = ${n(L2D, 4)} − ${n(ref.U0, 4)}·${n(ref.len, 2)} = ${n(psi, 4)} W/(m·K)   (dekket ligger mellom to oppvarmede rom)
+Tilsvarer ekstra varmetap ${n(psi * dT, 1)} W per meter fasade ved ΔT = ${n(dT, 0)} K`;
+    }
+    c += `
+θsi,min (R_si = 0,25) = ${n(tsMin, 2)} °C   f_Rsi = (θsi − θe)/(θi − θe) = ${n(fRsi, 3)}
+Krav etter NS-EN ISO 13788 (RF ≤ 80 % mot overflaten): p_i = ${n(rf / 100 * psat(ti), 0)} Pa → θsi,min ≥ ${n(thMin, 1)} °C → f_Rsi,min = ${n(fReq, 3)}
+Vurdering: ${fRsi >= fReq ? 'f_Rsi ≥ f_Rsi,min, lav risiko for muggvekst ✓' : 'f_Rsi < f_Rsi,min, risiko for muggvekst på overflaten'}`;
+    $('k2-calc').textContent = c;
+    window.__kLast = { L2D, psi, U0: ref.U0, fRsi, fReq, tsMin, s13, s25, D };
+  }
+  let kTimer = null;
+  const kSchedule = () => { clearTimeout(kTimer); kTimer = setTimeout(kuldebro, 30); };
+  bind(['k2-det', 'k2-st', 'k2-ut', 'k2-vt', 'k2-bv', 'k2-lkb', 'k2-ti', 'k2-te', 'k2-rf'], kSchedule);
+  window.addEventListener('resize', kSchedule);
+  window.__bf = { psat, dewpoint, iso6946, glaserCalc, buildDetail, solveField, kuldebroNow: kuldebro, uverdi, glaser, sammensatt };
+
+  loadPreset(); sammensatt(); glaser(); kuldebro();
 })();
 </script>
 
