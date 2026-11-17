@@ -39,7 +39,7 @@ Trykk på installasjonsikonet i adressefeltet.
 ## 3. Oppdatere appen senere
 
 1. Erstatt filene på nettadressen.
-2. Øk versjonsnummeret øverst i `sw.js`, for eksempel `styrke-v13` → `styrke-v14`.
+2. Øk versjonsnummeret øverst i `sw.js`, for eksempel `styrke-v14` → `styrke-v15`.
 3. Telefonen henter ny versjon neste gang appen åpnes med nett.
 
 ## Filer

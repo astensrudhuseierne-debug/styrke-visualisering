@@ -570,7 +570,7 @@ Kontroll ved x = 1 rad:  sin² = 0,841² = 0,708   cos² = 0,540² = 0,292   sum
     <p>Der isolasjonen brytes eller geometrien endres, finner varmen en snarvei. Feltet under er beregnet numerisk ved å løse varmeledning i hvert punkt i snittet. Fargene viser temperaturen, og de tynne linjene er isotermer. Linjene presses sammen der varmen strømmer raskt ut. Resultatet er kuldebroverdien ψ (ekstra varmetap per meter) og laveste innvendige overflatetemperatur.</p>
     <div class="ctrl">
       <label>Detalj <select id="k2-det"><option value="stender">Stender i bindingsverk (plansnitt)</option><option value="hjorne">Utvendig hjørne</option><option value="balkong">Betongdekke og balkong</option></select></label>
-      <label data-k2="stender">Stender <select id="k2-st"><option value="36">36x198</option><option value="48" selected>48x198</option><option value="98">98x198 (dobbel)</option></select></label>
+      <label data-k2="stender">Stender <select id="k2-st"><option value="36x73">36x73</option><option value="48x73">48x73</option><option value="36x98">36x98</option><option value="48x98">48x98</option><option value="98x98">98x98</option><option value="36x148">36x148</option><option value="48x148">48x148</option><option value="36x198">36x198</option><option value="48x198" selected>48x198</option><option value="98x198">98x198</option><option value="48x223">48x223</option></select></label>
       <label data-k2="stender">Utvendig isolasjon <select id="k2-ut"><option value="0">Ingen</option><option value="50" selected>50 mm</option></select></label>
       <label data-k2="hjorne">Veggtype <select id="k2-vt"><option value="bv">Isolert bindingsverk 200 mm</option><option value="bet">Betong 200 + 150 mm utvendig isolasjon</option><option value="tegl">Uisolert teglvegg 250 mm (eldre)</option></select></label>
       <label data-k2="balkong">Utførelse <select id="k2-bv"><option value="iso">Dekke med isolasjon forbi forkanten</option><option value="gj" selected>Gjennomgående balkongplate</option><option value="kb">Balkong med kuldebrobryter</option></select></label>
@@ -587,7 +587,7 @@ Kontroll ved x = 1 rad:  sin² = 0,841² = 0,708   cos² = 0,540² = 0,292   sum
       <li><b>ψ avhenger av målereglene.</b> Med innvendige mål blir hjørnets ψ positiv. Med utvendige mål blir den negativ, fordi arealet allerede er overvurdert. Bruk de samme målene som U-verdiarealene i beregningen.</li>
       <li><b>Temperaturfaktoren</b> f<sub>Rsi</sub> = (θ<sub>si</sub> − θ<sub>e</sub>)/(θ<sub>i</sub> − θ<sub>e</sub>) er uavhengig av klimaet og beskriver bare detaljen. Den sammenlignes med kravet f<sub>Rsi,min</sub>, som regnes ut fra innelufta: overflaten må holde RF under 80 % for å unngå mugg (NS-EN ISO 13788). Tyske regler (DIN 4108-2) bruker f<sub>Rsi</sub> ≥ 0,70 som fast grense.</li>
       <li><b>Summen av kuldebroene</b> gir normalisert kuldebroverdi for bygningen. TEK17 § 14-2 krever høyst 0,05 W/(m²K) for småhus og 0,07 for boligblokk, regnet per m² oppvarmet BRA.</li>
-    </ul><p class="note">Numerisk løsning med endelige volumer (stasjonær varmeledning i 2D, iterativ SOR-løser). Varmetapet regnes med R<sub>si</sub> = 0,13 og overflatetemperaturen med R<sub>si</sub> = 0,25 (NS-EN ISO 13788). R<sub>se</sub> = 0,04, unntatt bak luftet kledning der R<sub>se</sub> = 0,13. ψ er regnet med innvendige mål (ψ<sub>i</sub>). Hjørnet viser også ψ<sub>e</sub>. Rutenettet er 4–20 mm, og tynne sjikt er rundet av til hele ruter. Materialverdiene er typiske verdier. λ for kuldebrobryteren er en illustrativ ekvivalent verdi, så bruk produsentens dokumenterte ψ-verdi.</p></div>
+    </ul><p class="note">Numerisk løsning med endelige volumer (stasjonær varmeledning i 2D, iterativ SOR-løser). Varmetapet regnes med R<sub>si</sub> = 0,13 og overflatetemperaturen med R<sub>si</sub> = 0,25 (NS-EN ISO 13788). R<sub>se</sub> = 0,04, unntatt bak luftet kledning der R<sub>se</sub> = 0,13. ψ er regnet med innvendige mål (ψ<sub>i</sub>). Hjørnet viser også ψ<sub>e</sub>. Rutenettet er 4–20 mm. For stenderen er rutestørrelsen tilpasset så stenderdybden blir eksakt, mens tynne sjikt og stenderbredden rundes av til hele ruter. Mineralulla har samme tykkelse som stenderen. Materialverdiene er typiske verdier. λ for kuldebrobryteren er en illustrativ ekvivalent verdi, så bruk produsentens dokumenterte ψ-verdi.</p></div>
   </section>
 
   <!-- BF5 Varmegjenvinner -->
@@ -2524,10 +2524,10 @@ Innvendig overflate: duggpunkt ${n(dp, 1)} °C, θsi (R_si = 0,25) = ${n(G.thsi2
     const mats = [null, null, null]; const addM = (name, lam, col) => { mats.push({ name, lam, col }); return mats.length - 1; };
     let h, nx, ny, cell, Rse = 0.04, ref, info = {};
     if (det === 'stender') {
-      h = 0.004;
+      h = o.sd / 1000 / Math.round(o.sd / 4); // ~4 mm, eksakt stenderdybde
       const GIPS = addM('Gips', 0.25, '#6b6f73'), INS = addM('Mineralull', 0.035, C.insFill), TRE = addM('Tre', 0.13, C.woodFill), UTI = addM('Utvendig isolasjon', 0.033, C.insFill);
-      const b = o.st, cc = 0.6;
-      const lay = [[GIPS, 3], [INS, 50]]; if (o.ut) lay.push([UTI, Math.round(o.ut / 1000 / h)]);
+      const b = o.sb, cc = 0.6;
+      const lay = [[GIPS, 3], [INS, Math.round(o.sd / 1000 / h)]]; if (o.ut) lay.push([UTI, Math.round(o.ut / 1000 / h)]);
       const wc = lay.reduce((a, l) => a + l[1], 0);
       nx = 1 + wc + 1; ny = Math.round(cc / h); const stc = Math.round(b / 1000 / h), st0 = Math.round((ny - stc) / 2);
       cell = new Uint8Array(nx * ny);
@@ -2537,7 +2537,8 @@ Innvendig overflate: duggpunkt ${n(dp, 1)} °C, θsi (R_si = 0,25) = ${n(G.thsi2
       }
       Rse = 0.13;
       const R0 = 0.13 + lay.reduce((a, [m, c2]) => a + c2 * h / mats[m].lam, 0) + Rse;
-      ref = { U0: 1 / R0, len: cc, lenTxt: 'c/c 0,6 m', R0 };
+      ref = { U0: 1 / R0, len: ny * h, lenTxt: `c/c ${n(ny * h * 1000, 1)} mm (≈ 600)`, R0 };
+      info.stTxt = `Stender ${o.sb} × ${o.sd} mm, modellert ${n(stc * h * 1000, 1)} × ${n(o.sd, 0)} mm, mineralull ${n(o.sd, 0)} mm${o.ut ? ` + ${n(Math.round(o.ut / 1000 / h) * h * 1000, 1)} mm utvendig` : ''}`;
       // ISO 6946 med samme diskretiserte sjikt
       const L6946 = lay.map(([m, c2]) => m === INS ? { d: c2 * h, lamA: 0.035, lamB: 0.13, f: stc / ny } : { d: c2 * h, lam: mats[m].lam });
       info.iso = iso6946(L6946, 0.13, Rse); info.f = stc / ny;
@@ -2638,7 +2639,8 @@ Innvendig overflate: duggpunkt ${n(dp, 1)} °C, θsi (R_si = 0,25) = ${n(G.thsi2
   let k2Cache = {};
   function kuldebroCompute() {
     const det = $('k2-det').value;
-    const o = { st: +$('k2-st').value, ut: +$('k2-ut').value, vt: $('k2-vt').value, bv: $('k2-bv').value, lkb: +$('k2-lkb').value };
+    const [sb, sd] = $('k2-st').value.split('x').map(Number);
+    const o = { sb, sd, ut: +$('k2-ut').value, vt: $('k2-vt').value, bv: $('k2-bv').value, lkb: +$('k2-lkb').value };
     const ti = +$('k2-ti').value, te = +$('k2-te').value;
     const key = JSON.stringify([det, o]);
     const D = buildDetail(det, o);
@@ -2724,7 +2726,8 @@ U₀ for uforstyrret konstruksjon = 1/${n(ref.R0, 3)} = ${n(ref.U0, 4)} W/(m²K)
     if (D.info.iso) {
       const Ueff = L2D / ref.len, r = D.info.iso;
       c += `
-ψ per stender = L2D − U₀·c/c = ${n(L2D, 4)} − ${n(ref.U0, 4)}·0,6 = ${n(psi, 4)} W/(m·K)
+${D.info.stTxt}
+ψ per stender = L2D − U₀·c/c = ${n(L2D, 4)} − ${n(ref.U0, 4)}·${n(ref.len, 4)} = ${n(psi, 4)} W/(m·K)
 U_eff = L2D/c/c = ${n(Ueff, 4)} W/(m²K)   ISO 6946 samme sjikt: nedre/øvre grense U = ${n(1 / r.Rlow, 4)} / ${n(1 / r.Rup, 4)}, snitt ${n(r.U, 4)}
 Kontroll: numerisk U ligger mellom grensene ${Ueff <= 1 / r.Rlow + 1e-6 && Ueff >= 1 / r.Rup - 1e-6 ? '✓' : '✗'}  (treandel ${n(D.info.f * 100, 1)} %)`;
     } else if (D.info.corner) {
