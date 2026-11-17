@@ -594,11 +594,12 @@ Kontroll ved x = 1 rad:  sin² = 0,841² = 0,708   cos² = 0,540² = 0,292   sum
   <section class="mod" id="gjenvinner">
     <div class="mod-head"><span class="tag">Ventilasjon · temperaturvirkningsgrad og effekt</span><h2>Roterende varmegjenvinner</h2></div>
     <p>Rotoren varmes opp av avtrekkslufta og gir varmen fra seg til uteluft som strømmer motsatt vei. <b>Temperaturvirkningsgraden</b> sammenligner det gjenvinneren klarer med det maksimalt mulige: η = (t<sub>tilluft</sub> − t<sub>ute</sub>)/(t<sub>avtrekk</sub> − t<sub>ute</sub>). Effekten er P = ρ·c<sub>p</sub>·q·Δt ≈ 0,335·q[m³/h]·Δt [W].</p>
+    <p><b>Ytelseskontroll:</b> Mål t<sub>21</sub>, t<sub>11</sub> og t<sub>22</sub> ved stabil drift, regn ut målt η og sammenlign med η fra databladet. t<sub>12</sub> brukes til å kontrollere at luftmengdene er i balanse.</p>
     <div class="ctrl">
-      <label>Beregning <select id="vg-mode"><option value="eta">Fra virkningsgrad</option><option value="maalt" selected>Fra målte temperaturer</option></select></label>
+      <label>Beregning <select id="vg-mode"><option value="maalt" selected>Ytelseskontroll: målte temperaturer</option><option value="eta">Teoretisk: fra oppgitt η</option></select></label>
       <label>Ute t<sub>21</sub> <input type="range" id="vg-tu" min="-30" max="15" step="1" value="-15"><output id="vg-tu-o"></output></label>
       <label>Avtrekk t<sub>11</sub> <input type="range" id="vg-ta" min="16" max="26" step="1" value="23"><output id="vg-ta-o"></output></label>
-      <label data-vg="eta">Virkningsgrad η <input type="range" id="vg-eta" min="0.5" max="0.9" step="0.01" value="0.8"><output id="vg-eta-o"></output></label>
+      <label>Oppgitt η (datablad) <input type="range" id="vg-eta" min="0.5" max="0.9" step="0.01" value="0.8"><output id="vg-eta-o"></output></label>
       <label data-vg="maalt">Målt tilluft t<sub>22</sub> <input type="range" id="vg-tt" min="-30" max="26" step="0.5" value="14"><output id="vg-tt-o"></output></label>
       <label data-vg="maalt">Målt avkast t<sub>12</sub> <input type="range" id="vg-tk" min="-30" max="26" step="0.5" value="10"><output id="vg-tk-o"></output></label>
       <label>Tilluft q<sub>til</sub> <input type="range" id="vg-qt" min="100" max="5000" step="10" value="250"><output id="vg-qt-o"></output></label>
@@ -609,6 +610,7 @@ Kontroll ved x = 1 rad:  sin² = 0,841² = 0,708   cos² = 0,540² = 0,292   sum
     <pre class="calc" id="vg-calc"></pre>
     <div class="think"><b>Tankegang</b><ul>
       <li><b>Mål virkningsgraden på tilluftsiden.</b> Definisjonen i NS-EN 308 og i produktdatablad er η = (t<sub>22</sub> − t<sub>21</sub>)/(t<sub>11</sub> − t<sub>21</sub>). Nevneren (her 38 K) er det beste som er mulig, og telleren er det gjenvinneren faktisk klarer.</li>
+      <li><b>Slik måler du (praktiske råd, ikke normkrav):</b> Mål t<sub>22</sub> <i>før</i> ettervarmebatteriet. Står tilluftsviften etter rotoren, gir den ca. 0,5–1 K ekstra (tommelfingerregel), og da blir målt η for høy. Mål ved lav utetemperatur, så blir t<sub>11</sub> − t<sub>21</sub> stor og måleusikkerheten liten. Med følere på ±0,5 K og 38 K temperaturdifferanse er usikkerheten omtrent ±2 prosentpoeng.</li>
       <li><b>Avkastsiden er en kontroll.</b> Med like luftmengder skal avtrekket miste like mange grader som tilluften får. Gjør det ikke det, er luftmengdene i ubalanse, eller så er en føler feil plassert. Det er også mulig at rotoren lekker (overføring mellom luftstrømmene), at det står en motor i luftstrømmen, eller at fukt kondenserer.</li>
       <li><b>Det gjenvinneren ikke klarer, må ettervarmes.</b> Ettervarmebatteriet dekker resten opp til settpunktet. Med 80 % virkningsgrad og −15 °C ute dekker gjenvinneren over 80 % av oppvarmingsbehovet for ventilasjonslufta.</li>
       <li><b>TEK17 § 14-2</b> krever årsgjennomsnittlig temperaturvirkningsgrad ≥ 80 % for varmegjenvinneren. Det er et årsgjennomsnitt, så én måling ved én utetemperatur er ikke en dokumentasjon av kravet.</li>
@@ -2771,6 +2773,8 @@ Vurdering: ${fRsi >= fReq ? 'f_Rsi ≥ f_Rsi,min, lav risiko for muggvekst ✓' 
     const Pgj = RHOCP * qt * (t22 - t21), Putt = RHOCP * qt * (tset - t21), Pett = RHOCP * qt * Math.max(0, tset - t22), Pavt = RHOCP * qa * (t11 - t12);
     const ratioImpl = (t22 - t21) !== 0 ? (t11 - t12) / (t22 - t21) : NaN;
     const imbalance = mode === 'maalt' && Math.abs(t12 - t12exp) > 1.5;
+    const etaP = +$('vg-eta').value, uEta = dMax > 0 ? 0.5 * Math.sqrt(1 + (1 - eta) ** 2 + eta ** 2) / dMax : NaN; // følere ±0,5 K
+    const ytelseOk = eta >= etaP - uEta;
     // ---- Tegning ----
     let s = '';
     const ry0 = 30, ry1 = 232, rx0 = 286, rx1 = 354;
@@ -2796,6 +2800,7 @@ Vurdering: ${fRsi >= fReq ? 'f_Rsi ≥ f_Rsi,min, lav risiko for muggvekst ✓' 
     s += rect(bx, yb1, bw, 16, '#232a30') + rect(bx, yb2, bw, 16, '#232a30');
     const cl = v => Math.max(bx, Math.min(bx + bw, v));
     s += rect(bx, yb1, cl(X(t22)) - bx, 16, tColor(t22), 'none', 0.85);
+    if (mode === 'maalt') { const xp = bx + etaP * bw; s += `<line x1="${xp}" y1="${yb1 - 3}" x2="${xp}" y2="${yb1 + 19}" stroke="${C.fg}" stroke-width="2" stroke-dasharray="3 2"/>` + txt(xp, yb1 + 29, `oppgitt ${n(etaP * 100, 0)} %`, { a: 'middle', s: 10, c: C.fg }); }
     s += rect(cl(X(t12)), yb2, bx + bw - cl(X(t12)), 16, tColor(t12), 'none', 0.85);
     s += txt(bx, yb1 - 6, `${n(t21, 0)} °C`, { s: 10 }) + txt(bx + bw, yb1 - 6, `${n(t11, 0)} °C`, { a: 'end', s: 10 }) + txt(bx + bw / 2, yb1 - 6, `maks mulig ${n(dMax, 0)} K`, { a: 'middle', s: 10 });
     s += txt(bx + bw + 10, yb1 + 12, `η = ${n(t22 - t21, 1)}/${n(dMax, 0)} = ${n(eta * 100, 0)} %`, { s: 11, c: C.fg, w: 600 });
@@ -2817,6 +2822,11 @@ Kontroll med energibalanse: forventet t12 = t11 − (q_til/q_avt)·(t22 − t21)
           ? `Målingene passer med q_avt/q_til = ${n(1 / ratioImpl, 2)}, altså ubalanse i luftmengdene. Det kan også skyldes feil føler, lekkasje i rotoren eller kondens.`
           : `Det kan ikke forklares med ubalanse i luftmengdene. Kontroller følerne.`)
       : `\n  ✓ Målt avkast stemmer med balansen (avvik ${n(t12 - t12exp, 1)} K)`;
+    if (mode === 'maalt') c += `\nYtelseskontroll mot oppgitt η = ${n(etaP, 2)}:
+  avvik = ${n(eta, 3)} − ${n(etaP, 3)} = ${n((eta - etaP) * 100, 1)} prosentpoeng
+  måleusikkerhet (følere ±0,5 K): δη = 0,5·√(1 + (1 − η)² + η²)/(t11 − t21) = 0,5·√(1 + ${n((1 - eta) ** 2, 3)} + ${n(eta ** 2, 3)})/${n(dMax, 1)} = ±${n(uEta, 3)}
+  ${ytelseOk ? `✓ Målt η er innenfor oppgitt ytelse når måleusikkerheten er tatt med.` : `✗ Målt η er ${n((etaP - eta) * 100, 1)} prosentpoeng under oppgitt, mer enn måleusikkerheten. Sjekk at rotoren går (turtall og reim), at tetningene ikke lekker, og at t22 er målt før ettervarmebatteriet.`}
+  Dette er en øyeblikksmåling. TEK17 § 14-2 stiller krav til årsgjennomsnittet (≥ 80 %), som dokumenteres med produktdata og ikke med én måling.`;
     if (mode === 'maalt' && (eta > 1 || eta < 0)) c += `\n  ✗ η utenfor 0–100 %: tilluften kan ikke bli varmere enn avtrekket eller kaldere enn utelufta. Kontroller følerne.`;
     c += `
 ρ·cp = 1,2 · 1005 / 3600 = ${n(RHOCP, 3)} W·h/(m³K)
@@ -2826,7 +2836,7 @@ Ettervarming       P = ρ·cp·q_til·(t_sett − t22) = ${n(RHOCP, 3)}·${qt}·
 Avgitt fra avtrekk P = ρ·cp·q_avt·(t11 − t12) = ${n(RHOCP, 3)}·${qa}·${n(t11 - t12, 1)} = ${n(Pavt, 0)} W${Math.abs(Pavt - Pgj) > 0.05 * Math.max(Pgj, 1) ? '  ≠ gjenvunnet, energibalansen går ikke opp' : '  = gjenvunnet ✓'}
 Gjenvinneren dekker ${n(Math.min(1, Pgj / Math.max(Putt, 1e-9)) * 100, 0)} % av oppvarmingsbehovet for tilluften${t12 < 0 ? `\nAvkast ${n(t12, 1)} °C er under 0 °C: fare for ising, og anlegget kan redusere gjenvinningen.` : ''}`;
     $('vg-calc').textContent = c;
-    window.__vgLast = { eta, etaAvk, t22, t12, t12exp, Pgj, Putt, Pett, Pavt, imbalance };
+    window.__vgLast = { etaP, uEta, ytelseOk, eta, etaAvk, t22, t12, t12exp, Pgj, Putt, Pett, Pavt, imbalance };
   }
   bind(['vg-mode', 'vg-tu', 'vg-ta', 'vg-eta', 'vg-tt', 'vg-tk', 'vg-qt', 'vg-qa', 'vg-set'], gjenvinner);
 

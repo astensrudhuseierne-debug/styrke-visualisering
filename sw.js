@@ -1,6 +1,6 @@
 // Service worker: gjør appen tilgjengelig uten nett.
 // Øk versjonsnummeret når filene endres, så hentes ny versjon ved neste åpning.
-const VERSION = 'styrke-v12';
+const VERSION = 'styrke-v13';
 const FONTS = VERSION + '-fonts';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest',
